@@ -14,5 +14,5 @@ Projeto 1: Execução Orçamentária
       - Esta pasta recebe menos recursos do que as demais
       - Comparar com gastos em outras áreas
   - Arquivos incluídos:
-      - Preparo de Dados: [preparo.Rmd](preparo.Rmd)
-      - Análise do Empenho: [empenho.Rmd](empenho.Rmd)
+      - Preparo de Dados: [preparo.Rmd](preparo.md)
+      - Análise do Empenho: [empenho.Rmd](empenho.md)

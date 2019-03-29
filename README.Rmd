@@ -18,6 +18,6 @@ knitr::include_graphics("pics/transparencia_fiscal.png")
     + Comparar com gastos em outras áreas
     
 * Arquivos incluídos:
-    + Preparo de Dados: [preparo.Rmd](preparo.Rmd)
-    + Análise do Empenho: [empenho.Rmd](empenho.Rmd)
+    + Preparo de Dados: [preparo.Rmd](preparo.md)
+    + Análise do Empenho: [empenho.Rmd](empenho.md)
 
