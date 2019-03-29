@@ -91,11 +91,32 @@ Empenho médio por órgão:
 ```{r,cache=T}
 df_orcamento %>%
   group_by(`Nome Órgão`) %>%
-  summarize(n=n(),medio=mean(Empenho),mediano=median(Empenho),desvio_padrao=sd(Empenho)) %>%
-  arrange(-medio)
+  summarize(n=n(),total=sum(Empenho),medio=mean(Empenho),mediano=median(Empenho),desvio_padrao=sd(Empenho)) %>%
+  arrange(-total)
 ```
 
-Mostra como boxbplot
+Empenho total por órgão: Top 5
+
+```{r}
+df_orcamento %>%
+  rename(orgao=`Nome Órgão`) %>%
+  mutate(orgao=orgao%>%fct_reorder(-Empenho,sum)) %>%
+  filter(as.integer(orgao)<6) %>%
+  mutate(orgao=orgao%>%fct_rev) %>%
+  group_by(orgao) %>%
+  summarize(total=sum(Empenho)/10^6) %>%
+  ggplot(aes(orgao,total)) +
+  geom_col(aes(fill=orgao)) +
+  coord_flip() +
+  labs(title="Empenho Total por Órgão: Top 5",
+       subtitle="Ano 2018",
+       y="Empenho Total (R$ milhões)") +
+  theme(legend.position = "none",
+        axis.title.y=element_blank())
+```
+
+
+Distribuição do Empenho por Órgão (boxbplot)
 
 ```{r,cache=T}
 df_orcamento %>%
@@ -113,7 +134,7 @@ df_orcamento %>%
         axis.title.y=element_blank())
 ```
 
-Ou como "violin" plot
+Distribuição do Empenho por Órgão (violin plot)
 
 ```{r,cache=T}
 df_orcamento %>%

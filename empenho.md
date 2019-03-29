@@ -243,26 +243,48 @@ Empenho médio por órgão:
 ``` r
 df_orcamento %>%
   group_by(`Nome Órgão`) %>%
-  summarize(n=n(),medio=mean(Empenho),mediano=median(Empenho),desvio_padrao=sd(Empenho)) %>%
-  arrange(-medio)
+  summarize(n=n(),total=sum(Empenho),medio=mean(Empenho),mediano=median(Empenho),desvio_padrao=sd(Empenho)) %>%
+  arrange(-total)
 ```
 
-    ## # A tibble: 27 x 5
-    ##    `Nome Órgão`                               n medio mediano desvio_padrao
-    ##    <chr>                                  <int> <dbl>   <dbl>         <dbl>
-    ##  1 Secretaria de Estado de Educação       19940 8837.   8546.         6089.
-    ##  2 Secretaria de Estado de Saúde          11056 2257.   1668.         2086.
-    ##  3 Secretaria de Estado de Ciência Tecno~  1062 1468.   1148.          891.
-    ##  4 Ministério Público                      2629 1243.   1231           776.
-    ##  5 Secretaria de Estado de Obras           4671  862.    539           800.
-    ##  6 Secretaria de Estado da Casa Civil e ~ 10603  800.    413          1013.
-    ##  7 Secretaria de Estado de Segurança       5542  795.    623           640.
-    ##  8 Secretaria de Estado do Ambiente        2565  773.    670           638.
-    ##  9 Secretaria de Estado de Ciência Tecno~ 12816  714.    483           712.
-    ## 10 Tribunal de Justiça do Estado do Rio ~  2436  607.    520.          455.
+    ## # A tibble: 27 x 6
+    ##    `Nome Órgão`                       n   total medio mediano desvio_padrao
+    ##    <chr>                          <int>   <dbl> <dbl>   <dbl>         <dbl>
+    ##  1 Secretaria de Estado de Educa~ 19940  1.76e8 8837.   8546.         6089.
+    ##  2 Secretaria de Estado de Saúde  11056  2.50e7 2257.   1668.         2086.
+    ##  3 Secretaria de Estado de Ciênc~ 12816  9.15e6  714.    483           712.
+    ##  4 Secretaria de Estado da Casa ~ 10603  8.48e6  800.    413          1013.
+    ##  5 Secretaria de Estado de Segur~  5542  4.40e6  795.    623           640.
+    ##  6 Secretaria de Estado de Obras   4671  4.03e6  862.    539           800.
+    ##  7 Ministério Público              2629  3.27e6 1243.   1231           776.
+    ##  8 Secretaria de Estado do Ambie~  2565  1.98e6  773.    670           638.
+    ##  9 Secretaria de Estado de Fazen~  4192  1.83e6  436.    313           397.
+    ## 10 Secretaria de Estado de Agric~  4800  1.78e6  371.    302           281.
     ## # ... with 17 more rows
 
-Mostra como boxbplot
+Empenho total por órgão: Top 5
+
+``` r
+df_orcamento %>%
+  rename(orgao=`Nome Órgão`) %>%
+  mutate(orgao=orgao%>%fct_reorder(-Empenho,sum)) %>%
+  filter(as.integer(orgao)<6) %>%
+  mutate(orgao=orgao%>%fct_rev) %>%
+  group_by(orgao) %>%
+  summarize(total=sum(Empenho)/10^6) %>%
+  ggplot(aes(orgao,total)) +
+  geom_col(aes(fill=orgao)) +
+  coord_flip() +
+  labs(title="Empenho Total por Órgão: Top 5",
+       subtitle="Ano 2018",
+       y="Empenho Total (R$ milhões)") +
+  theme(legend.position = "none",
+        axis.title.y=element_blank())
+```
+
+![](empenho_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+Distribuição do Empenho por Órgão (boxbplot)
 
 ``` r
 df_orcamento %>%
@@ -280,9 +302,9 @@ df_orcamento %>%
         axis.title.y=element_blank())
 ```
 
-![](empenho_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](empenho_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
-Ou como “violin” plot
+Distribuição do Empenho por Órgão (violin plot)
 
 ``` r
 df_orcamento %>%
@@ -300,4 +322,4 @@ df_orcamento %>%
         axis.title.y=element_blank())
 ```
 
-![](empenho_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](empenho_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
