@@ -3,15 +3,15 @@ title: "Projeto 1: Execução Orçamentária"
 output: github_document
 ---
 
+* Fonte: [Portal de Transparência Fiscal](http://www.transparencia.rj.gov.br/transparencia/faces/OrcamentoTematico/despesa)
 * Estudo exploratório:
-    + Quais pastas estão sendo mais pagas
+    + Quais "pastas" estão sendo mais pagas
     + Quais modalidades de licitação
     + Com qual frequência de dispensa
-    + Por área de governo etc.
+    + Por áreas de governo, etc.
 * Pasta de Saúde:
-    + Esta pasta recebe menos recursos do que as demais?
-    + Gastos em outras áreas são mais ou menos prioritários?
-* Fonte: [Portal de Transparência Fiscal](http://www.transparencia.rj.gov.br/transparencia/faces/OrcamentoTematico/despesa)
+    + Esta pasta recebe menos recursos do que as demais
+    + Comparar com gastos em outras áreas
 
 # Análise Exploratória
 
@@ -52,39 +52,76 @@ Olhar para as primeiras linhas
 read_lines(fname_2018, n_max=10)
 ```
 
-- Pular 5 linhas no cabeçalho linhas,
-- Ajustar o "encoding"
+Qual é o encoding deste arquivo?
+
+```{r}
+guess_encoding("data/despesa2018.zip")
+```
+
+
+Data Cleansing: Pular 5 linhas no cabeçalho, ajustar o "encoding"
 
 ```{r tratar1,cache=T}
-primeiras_linhas <- read_lines(fname_2018,
-           n_max=5,skip=5,
-           locale=locale(encoding="latin1"))
+primeiras_linhas <- read_lines(fname_2018, # .zip
+                               skip=5,n_max=5,
+                               locale=locale(encoding="ISO-8859-1"))
 primeiras_linhas
 ```
 
-Remover espaços
+Remover espaços. Referencia de [REGEXP](https://stringr.tidyverse.org/articles/regular-expressions.html)
 
 ```{r}
-remove_espacos <- function(s) s %>%
+remove_espacos <- function(s) s %>% # 'pipe' do pacote "magrittr"
   str_remove_all("\\s+(?=;)") %>%
-  str_remove_all("\\s+$")
+  str_remove_all("\\s+$") %>%
+  str_replace_all("\\s+"," ")
+```
 
-primeiras_linhas_squished <- primeiras_linhas %>%
-  remove_espacos
-primeiras_linhas_squished
+Testar nas primeiras linhas
+```{r}
+primeiras_linhas %>% remove_espacos
+```
+
+Compara tamanho antes do "squish" e depois
+
+```{r}
+primeiras_linhas%>%str_length%>%sum
+primeiras_linhas%>%remove_espacos%>%str_length%>%sum
+```
+
+```{bash}
+unzip -p 'data/despesa2018.zip' | tail -n 30
 ```
 
 Olhando pro fim do arquivo
 
 ```{r}
-read_lines(fname_2018,
-          locale=locale(encoding="latin1"))%>%length
+# BUGADO
+#read_lines(fname_2018,skip=linhas-10,
+          #locale=locale(encoding="ISO-8859-1"))
+
+str_fname2018 <- read_lines(fname_2018,skip=5,
+                            locale=locale(encoding="ISO-8859-1"))
+str_length(str_fname2018)%>%sum
+```
+
+```{r}
+str_fname2018_squished <- str_fname2018%>%remove_espacos
+str_fname2018_squished%>%str_length%>%sum
+```
+
+```{r}
+str_fname2018_squished%>%write_lines("data/despesa2018_squished.csv")
+```
+
+```{r}
+guess_encoding("data/despesa2018_squished.csv")
 ```
 
 
 ```{r}
 read_lines(fname_2018,
-           locale=locale(encoding="latin1"),
+           locale=locale(encoding="ISO-8859-1"),
            skip=99360)
 ```
 
@@ -94,7 +131,7 @@ Colocar num data frame ("tibble")
 df_orcamento <- read_delim("./data/despesa2018.zip",
                            delim=";",
                            n_max=5,skip=5,
-                           locale=locale(encoding="latin1"))
+                           locale=locale(encoding="ISO-8859-1"))
 df_orcamento
 ```
 
