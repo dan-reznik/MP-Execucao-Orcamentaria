@@ -86,12 +86,17 @@ Ordenando pelo mais frequente
 df_orcamento %>% count(`Órgão`,`Nome Órgão`,sort=T)
 ```
 
-Empenho médio por órgão:
+Empenho por órgão:
 
 ```{r,cache=T}
 df_orcamento %>%
   group_by(`Nome Órgão`) %>%
-  summarize(n=n(),total=sum(Empenho),medio=mean(Empenho),mediano=median(Empenho),desvio_padrao=sd(Empenho)) %>%
+  summarize(n=n(),
+            total=sum(Empenho),
+            media=mean(Empenho),
+            mediana=median(Empenho),
+            desvio_padrao=sd(Empenho),
+            mad=mad(Empenho)) %>%
   arrange(-total)
 ```
 
