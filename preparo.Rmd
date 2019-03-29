@@ -61,7 +61,7 @@ remove_espacos <- function(s) s %>% # 'pipe' do pacote "magrittr"
   str_replace_all("\\s+"," ")
 ```
 
-Testar nas primeiras linhas
+Remove espaços nas primeiras linhas
 
 ```{r}
 primeiras_linhas %>% remove_espacos
@@ -79,17 +79,16 @@ Olhando pro fim do arquivo
 ```{r,cache=T}
 # BUGADO
 # read_lines(fname_2018,skip=linhas-10,locale=loc_bz)
-str_2018 <- read_lines(fname_2018,skip=5,
+lines_2018 <- read_lines(fname_2018,skip=5,
                             locale=loc_bz)
-str_length(str_2018) %>% sum
+str_length(lines_2018) %>% sum
 ```
 
 Remove espaços de todas as linhas
 
 ```{r,cache=T}
-str_2018_squished <- str_2018 %>% remove_espacos
-rm(str_2018)
-str_2018_squished %>% str_length %>% sum
+lines_2018_squished <- lines_2018 %>% remove_espacos
+lines_2018_squished %>% str_length %>% sum
 ```
 
 Salva arquivo enxuto em novo csv
@@ -99,16 +98,27 @@ fname_2018_squished <- "data/despesa2018_squished.csv"
 ```
 
 ```{r,eval=F}
-fname_2018_squished <- "data/despesa2018_squished.csv"
-str_2018_squished %>% write_lines(fname_2018_squished)
-rm(str_2018_squished)
+lines_2018_squished %>% write_lines(fname_2018_squished)
 ```
+
+Deleta da memória variáveis não mais necessárias
+
+```{r}
+rm(lines_2018)
+rm(lines_2018_squished)
+```
+
+Função para trocar a extensão de um nome de arquivo
+
+```{r}
+repl_ext <- function(s,new_ext) s %>%
+  str_replace_all("(?<=\\.).+$",new_ext)
+```
+
 
 Zipa o resultado
 
 ```{r,cache=T}
-repl_ext <- function(s,new_ext) s %>%
-  str_replace_all("(?<=\\.).+$",new_ext)
 fname_2018_squished_zip <- repl_ext(fname_2018_squished,"zip")
 zip::zip(fname_2018_squished_zip,fname_2018_squished)
 ```

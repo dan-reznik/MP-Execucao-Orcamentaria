@@ -90,7 +90,7 @@ remove_espacos <- function(s) s %>% # 'pipe' do pacote "magrittr"
   str_replace_all("\\s+"," ")
 ```
 
-Testar nas primeiras
+Remove espaços nas primeiras
     linhas
 
 ``` r
@@ -122,9 +122,9 @@ Olhando pro fim do arquivo
 ``` r
 # BUGADO
 # read_lines(fname_2018,skip=linhas-10,locale=loc_bz)
-str_2018 <- read_lines(fname_2018,skip=5,
+lines_2018 <- read_lines(fname_2018,skip=5,
                             locale=loc_bz)
-str_length(str_2018) %>% sum
+str_length(lines_2018) %>% sum
 ```
 
     ## [1] 315562907
@@ -132,9 +132,8 @@ str_length(str_2018) %>% sum
 Remove espaços de todas as linhas
 
 ``` r
-str_2018_squished <- str_2018 %>% remove_espacos
-rm(str_2018)
-str_2018_squished %>% str_length %>% sum
+lines_2018_squished <- lines_2018 %>% remove_espacos
+lines_2018_squished %>% str_length %>% sum
 ```
 
     ## [1] 50092043
@@ -146,16 +145,26 @@ fname_2018_squished <- "data/despesa2018_squished.csv"
 ```
 
 ``` r
-fname_2018_squished <- "data/despesa2018_squished.csv"
-str_2018_squished %>% write_lines(fname_2018_squished)
-rm(str_2018_squished)
+lines_2018_squished %>% write_lines(fname_2018_squished)
+```
+
+Deleta da memória variáveis não mais necessárias
+
+``` r
+rm(lines_2018)
+rm(lines_2018_squished)
+```
+
+Função para trocar a extensão de um nome de arquivo
+
+``` r
+repl_ext <- function(s,new_ext) s %>%
+  str_replace_all("(?<=\\.).+$",new_ext)
 ```
 
 Zipa o resultado
 
 ``` r
-repl_ext <- function(s,new_ext) s %>%
-  str_replace_all("(?<=\\.).+$",new_ext)
 fname_2018_squished_zip <- repl_ext(fname_2018_squished,"zip")
 zip::zip(fname_2018_squished_zip,fname_2018_squished)
 ```
@@ -186,4 +195,4 @@ dir_info("data") %>% select(path,size,modification_time)
     ## 2 data/despesa2018.csv              301.04M 2019-03-29 18:05:13
     ## 3 data/despesa2018.zip               17.98M 2019-03-29 16:40:21
     ## 4 data/despesa2018_squished.csv      49.34M 2019-03-29 18:06:40
-    ## 5 data/despesa2018_squished.zip       9.08M 2019-03-29 19:13:25
+    ## 5 data/despesa2018_squished.zip       9.08M 2019-03-29 19:43:56
