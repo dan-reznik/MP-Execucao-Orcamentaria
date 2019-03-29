@@ -21,7 +21,7 @@ dir_info("data") %>% select(path,size,modification_time)
     ## 2 data/despesa2018.csv              301.04M 2019-03-29 18:05:13
     ## 3 data/despesa2018.zip               17.98M 2019-03-29 16:40:21
     ## 4 data/despesa2018_squished.csv      49.34M 2019-03-29 18:06:40
-    ## 5 data/despesa2018_squished.zip       9.08M 2019-03-29 19:13:25
+    ## 5 data/despesa2018_squished.zip       9.08M 2019-03-29 19:43:56
 
 # Leitura de Dados Higienizados
 
@@ -272,9 +272,8 @@ df_orcamento %>%
   mutate(orgao=orgao%>%fct_rev) %>%
   ggplot(aes(orgao,Empenho)) +
   geom_boxplot(aes(fill=orgao),notch=T) +
-  #scale_y_log10(trans="reverse") +
+  scale_y_log10() +
   coord_flip() +
-  scale_y_continuous(trans="log10") +
   labs(title="Empenhos Medianos por Órgão: Top 5",
        subtitle="Ano 2018") +
   theme(legend.position = "none",
@@ -293,9 +292,8 @@ df_orcamento %>%
   mutate(orgao=orgao%>%fct_rev) %>%
   ggplot(aes(orgao,Empenho)) +
   geom_violin(aes(fill=orgao)) +
-  #scale_y_log10(trans="reverse") +
+  scale_y_log10() +
   coord_flip() +
-  scale_y_continuous(trans="log10") +
   labs(title="Empenhos Medianos por Órgão: Top 5",
        subtitle="Ano 2018") +
   theme(legend.position = "none",

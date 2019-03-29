@@ -105,9 +105,8 @@ df_orcamento %>%
   mutate(orgao=orgao%>%fct_rev) %>%
   ggplot(aes(orgao,Empenho)) +
   geom_boxplot(aes(fill=orgao),notch=T) +
-  #scale_y_log10(trans="reverse") +
+  scale_y_log10() +
   coord_flip() +
-  scale_y_continuous(trans="log10") +
   labs(title="Empenhos Medianos por Órgão: Top 5",
        subtitle="Ano 2018") +
   theme(legend.position = "none",
@@ -124,9 +123,8 @@ df_orcamento %>%
   mutate(orgao=orgao%>%fct_rev) %>%
   ggplot(aes(orgao,Empenho)) +
   geom_violin(aes(fill=orgao)) +
-  #scale_y_log10(trans="reverse") +
+  scale_y_log10() +
   coord_flip() +
-  scale_y_continuous(trans="log10") +
   labs(title="Empenhos Medianos por Órgão: Top 5",
        subtitle="Ano 2018") +
   theme(legend.position = "none",
