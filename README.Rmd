@@ -1,0 +1,105 @@
+---
+title: "Projeto 1: Execução Orçamentária"
+output: github_document
+---
+
+* Estudo exploratório:
+    + Quais pastas estão sendo mais pagas
+    + Quais modalidades de licitação
+    + Com qual frequência de dispensa
+    + Por área de governo etc.
+* Pasta de Saúde:
+    + Esta pasta recebe menos recursos do que as demais?
+    + Gastos em outras áreas são mais ou menos prioritários?
+* Fonte: [Portal de Transparência Fiscal](http://www.transparencia.rj.gov.br/transparencia/faces/OrcamentoTematico/despesa)
+
+# Análise Exploratória
+
+Inclusão de pacotes
+
+```{r setup,cache=T,message=F}
+library(tidyverse)
+library(fs)
+```
+
+Lista diretório
+
+```{r}
+dir_ls("data")
+```
+
+Cria variável com nome do arquivo
+
+```{r}
+fname_2018 <- "data/despesa2018.zip"
+```
+
+Conta linhas antes de "abrir" o .zip
+
+```{bash,cache=T}
+unzip -p 'data/despesa2018.zip' | wc -l
+```
+
+Colocar em variável
+
+```{r}
+linhas <- 99638
+```
+
+Olhar para as primeiras linhas
+
+```{r inspect,cache=T}
+read_lines(fname_2018, n_max=10)
+```
+
+- Pular 5 linhas no cabeçalho linhas,
+- Ajustar o "encoding"
+
+```{r tratar1,cache=T}
+primeiras_linhas <- read_lines(fname_2018,
+           n_max=5,skip=5,
+           locale=locale(encoding="latin1"))
+primeiras_linhas
+```
+
+Remover espaços
+
+```{r}
+remove_espacos <- function(s) s %>%
+  str_remove_all("\\s+(?=;)") %>%
+  str_remove_all("\\s+$")
+
+primeiras_linhas_squished <- primeiras_linhas %>%
+  remove_espacos
+primeiras_linhas_squished
+```
+
+Olhando pro fim do arquivo
+
+```{r}
+read_lines(fname_2018,
+          locale=locale(encoding="latin1"))%>%length
+```
+
+
+```{r}
+read_lines(fname_2018,
+           locale=locale(encoding="latin1"),
+           skip=99360)
+```
+
+Colocar num data frame ("tibble")
+
+```{r df1,cache=T}
+df_orcamento <- read_delim("./data/despesa2018.zip",
+                           delim=";",
+                           n_max=5,skip=5,
+                           locale=locale(encoding="latin1"))
+df_orcamento
+```
+
+Quantas linhas?
+
+```{r}
+nrow(df_orcamento)
+```
