@@ -271,14 +271,35 @@ df_orcamento %>%
   filter(as.integer(orgao)<6) %>%
   mutate(orgao=orgao%>%fct_rev) %>%
   ggplot(aes(orgao,Empenho)) +
-  geom_boxplot(aes(fill=orgao)) +
+  geom_boxplot(aes(fill=orgao),notch=T) +
   #scale_y_log10(trans="reverse") +
   coord_flip() +
   scale_y_continuous(trans="log10") +
-  labs(title="Maiores Empenhos Medianos por Órgão",
+  labs(title="Empenhos Medianos por Órgão: Top 5",
        subtitle="Ano 2018") +
   theme(legend.position = "none",
         axis.title.y=element_blank())
 ```
 
 ![](empenho_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+Ou como “violin” plot
+
+``` r
+df_orcamento %>%
+  rename(orgao=`Nome Órgão`) %>%
+  mutate(orgao=orgao%>%fct_reorder(-Empenho)) %>%
+  filter(as.integer(orgao)<6) %>%
+  mutate(orgao=orgao%>%fct_rev) %>%
+  ggplot(aes(orgao,Empenho)) +
+  geom_violin(aes(fill=orgao)) +
+  #scale_y_log10(trans="reverse") +
+  coord_flip() +
+  scale_y_continuous(trans="log10") +
+  labs(title="Empenhos Medianos por Órgão: Top 5",
+       subtitle="Ano 2018") +
+  theme(legend.position = "none",
+        axis.title.y=element_blank())
+```
+
+![](empenho_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
