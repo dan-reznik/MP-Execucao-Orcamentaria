@@ -88,7 +88,7 @@ df_orcamento %>% count(`Órgão`,`Nome Órgão`,sort=T)
 
 Empenho por órgão:
 
-```{r,cache=T}
+```{r}
 df_orcamento %>%
   group_by(`Nome Órgão`) %>%
   summarize(n=n(),

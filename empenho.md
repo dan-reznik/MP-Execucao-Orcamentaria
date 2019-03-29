@@ -238,28 +238,33 @@ df_orcamento %>% count(`Órgão`,`Nome Órgão`,sort=T)
     ## 10 10    Ministério Público                             2629
     ## # ... with 17 more rows
 
-Empenho médio por órgão:
+Empenho por órgão:
 
 ``` r
 df_orcamento %>%
   group_by(`Nome Órgão`) %>%
-  summarize(n=n(),total=sum(Empenho),medio=mean(Empenho),mediano=median(Empenho),desvio_padrao=sd(Empenho)) %>%
+  summarize(n=n(),
+            total=sum(Empenho),
+            media=mean(Empenho),
+            mediana=median(Empenho),
+            desvio_padrao=sd(Empenho),
+            mad=mad(Empenho)) %>%
   arrange(-total)
 ```
 
-    ## # A tibble: 27 x 6
-    ##    `Nome Órgão`                       n   total medio mediano desvio_padrao
-    ##    <chr>                          <int>   <dbl> <dbl>   <dbl>         <dbl>
-    ##  1 Secretaria de Estado de Educa~ 19940  1.76e8 8837.   8546.         6089.
-    ##  2 Secretaria de Estado de Saúde  11056  2.50e7 2257.   1668.         2086.
-    ##  3 Secretaria de Estado de Ciênc~ 12816  9.15e6  714.    483           712.
-    ##  4 Secretaria de Estado da Casa ~ 10603  8.48e6  800.    413          1013.
-    ##  5 Secretaria de Estado de Segur~  5542  4.40e6  795.    623           640.
-    ##  6 Secretaria de Estado de Obras   4671  4.03e6  862.    539           800.
-    ##  7 Ministério Público              2629  3.27e6 1243.   1231           776.
-    ##  8 Secretaria de Estado do Ambie~  2565  1.98e6  773.    670           638.
-    ##  9 Secretaria de Estado de Fazen~  4192  1.83e6  436.    313           397.
-    ## 10 Secretaria de Estado de Agric~  4800  1.78e6  371.    302           281.
+    ## # A tibble: 27 x 7
+    ##    `Nome Órgão`                 n   total media mediana desvio_padrao   mad
+    ##    <chr>                    <int>   <dbl> <dbl>   <dbl>         <dbl> <dbl>
+    ##  1 Secretaria de Estado de~ 19940  1.76e8 8837.   8546.         6089. 7346.
+    ##  2 Secretaria de Estado de~ 11056  2.50e7 2257.   1668.         2086. 1817.
+    ##  3 Secretaria de Estado de~ 12816  9.15e6  714.    483           712.  506.
+    ##  4 Secretaria de Estado da~ 10603  8.48e6  800.    413          1013.  430.
+    ##  5 Secretaria de Estado de~  5542  4.40e6  795.    623           640.  623.
+    ##  6 Secretaria de Estado de~  4671  4.03e6  862.    539           800.  652.
+    ##  7 Ministério Público        2629  3.27e6 1243.   1231           776.  979.
+    ##  8 Secretaria de Estado do~  2565  1.98e6  773.    670           638.  802.
+    ##  9 Secretaria de Estado de~  4192  1.83e6  436.    313           397.  317.
+    ## 10 Secretaria de Estado de~  4800  1.78e6  371.    302           281.  310.
     ## # ... with 17 more rows
 
 Empenho total por órgão: Top 5
