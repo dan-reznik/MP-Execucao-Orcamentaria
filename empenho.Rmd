@@ -1,0 +1,115 @@
+---
+title: "Execução Orçamentária: Análise do Empenho"
+output: github_document
+---
+
+Inclusão de pacotes
+
+```{r setup,message=F}
+library(tidyverse)
+library(fs)
+```
+
+Checa tamanho dos arquivos
+
+```{r}
+dir_info("data") %>% select(path,size,modification_time)
+```
+
+# Leitura de Dados Higienizados
+
+Colocar num data frame ("tibble"). Nota: arquivo agora 'e UTF-8
+
+```{r df1,cache=T}
+fname_2018_squished_zip <- "data/despesa2018_squished.zip"
+df_orcamento <- read_delim(fname_2018_squished_zip,delim=";",
+                           quote="'") # evita erro com "
+df_orcamento
+```
+
+```{r}
+problems(df_orcamento)
+```
+
+Quantas linhas, colunas, ou dimensões?
+
+```{r}
+nrow(df_orcamento)
+ncol(df_orcamento)
+dim(df_orcamento)
+```
+
+Examinando data frame verticalmente
+```{r}
+glimpse(df_orcamento)
+```
+
+# Análise do "Empenho"
+
+Calcula sumarização de colunas que parecem conter valores:
+
+```{r,cache=T}
+summary(df_orcamento%>%select(contains("empenh"),
+                              contains("valor")))
+```
+
+Quantas linhas não preenchidas (com 'NA')?
+
+```{r,cache=T}
+df_orcamento$Empenho %>% is.na %>% sum
+```
+
+Plota histograma do Empenho
+
+```{r.cache=T}
+df_orcamento %>% ggplot(aes(Empenho)) +
+  geom_histogram(bins=30,fill="blue",color="black")
+```
+
+Aplica "log" no valor:
+
+```{r,cache=T}
+df_orcamento %>% ggplot(aes(Empenho)) +
+  geom_histogram(bins=30,fill="blue",color="black") +
+  scale_x_log10()
+```
+
+Estudo dos Órgãos
+
+```{r,cache=T}
+df_orcamento %>% count(`Órgão`,`Nome Órgão`)
+```
+
+Ordenando pelo mais frequente
+
+```{r,cache=T}
+df_orcamento %>% count(`Órgão`,`Nome Órgão`,sort=T)
+```
+
+Empenho médio por órgão:
+
+```{r,cache=T}
+df_orcamento %>%
+  group_by(`Nome Órgão`) %>%
+  summarize(n=n(),medio=mean(Empenho),mediano=median(Empenho),desvio_padrao=sd(Empenho)) %>%
+  arrange(-medio)
+```
+
+Mostra como boxbplot
+
+```{r,cache=T}
+df_orcamento %>%
+  rename(orgao=`Nome Órgão`) %>%
+  mutate(orgao=orgao%>%fct_reorder(-Empenho)) %>%
+  filter(as.integer(orgao)<6) %>%
+  mutate(orgao=orgao%>%fct_rev) %>%
+  ggplot(aes(orgao,Empenho)) +
+  geom_boxplot(aes(fill=orgao)) +
+  #scale_y_log10(trans="reverse") +
+  coord_flip() +
+  scale_y_continuous(trans="log10") +
+  labs(title="Maiores Empenhos Medianos por Órgão",
+       subtitle="Ano 2018") +
+  theme(legend.position = "none",
+        axis.title.y=element_blank())
+```

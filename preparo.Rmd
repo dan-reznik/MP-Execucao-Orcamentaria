@@ -1,0 +1,126 @@
+---
+title: "Execução Orçamentária: Preparo de Dados"
+output: github_document
+---
+
+Inclusão de pacotes
+
+```{r setup,message=F}
+library(tidyverse)
+library(fs)
+```
+
+Lista diretório
+
+```{r}
+dir_ls("data")
+```
+
+Unzipa o original
+
+```{r,eval=F}
+unzip("data/despesa2018.zip",exdir='data')
+```
+
+Cria variável com nome do arquivo e conta linhas
+
+```{r,cache=T}
+fname_2018 <- "data/despesa2018.csv"
+linhas <- read_file(fname_2018) %>% str_count('\\n')
+linhas
+```
+
+Olhar para as primeiras linhas
+
+```{r inspect,cache=T}
+read_lines(fname_2018, n_max=10)
+```
+
+Qual é o encoding deste arquivo?
+
+```{r,cache=T}
+guess_encoding(fname_2018)
+```
+
+Data Cleansing: Pular 5 linhas no cabeçalho, ajustar o "encoding"
+
+```{r tratar1,cache=T}
+loc_bz <- locale(encoding="ISO-8859-1")
+primeiras_linhas <- read_lines(fname_2018, # .zip
+                               skip=5,n_max=5,
+                               locale=loc_bz)
+primeiras_linhas
+```
+
+Remover espaços. Referencia de [REGEXP](https://stringr.tidyverse.org/articles/regular-expressions.html)
+
+```{r}
+remove_espacos <- function(s) s %>% # 'pipe' do pacote "magrittr"
+  str_remove_all("\\s+(?=;)") %>%
+  str_remove_all("\\s+$") %>%
+  str_replace_all("\\s+"," ")
+```
+
+Testar nas primeiras linhas
+
+```{r}
+primeiras_linhas %>% remove_espacos
+```
+
+Compara tamanho antes do "squish" e depois
+
+```{r,cache=T}
+primeiras_linhas %>% str_length %>% sum
+primeiras_linhas %>% remove_espacos %>% str_length %>% sum
+```
+
+Olhando pro fim do arquivo
+
+```{r,cache=T}
+# BUGADO
+# read_lines(fname_2018,skip=linhas-10,locale=loc_bz)
+str_2018 <- read_lines(fname_2018,skip=5,
+                            locale=loc_bz)
+str_length(str_2018) %>% sum
+```
+
+Remove espaços de todas as linhas
+
+```{r,cache=T}
+str_2018_squished <- str_2018 %>% remove_espacos
+rm(str_2018)
+str_2018_squished %>% str_length %>% sum
+```
+
+Salva arquivo enxuto em novo csv
+
+```{r}
+fname_2018_squished <- "data/despesa2018_squished.csv"
+```
+
+```{r,eval=F}
+fname_2018_squished <- "data/despesa2018_squished.csv"
+str_2018_squished %>% write_lines(fname_2018_squished)
+rm(str_2018_squished)
+```
+
+Zipa o resultado
+
+```{r,cache=T}
+repl_ext <- function(s,new_ext) s %>%
+  str_replace_all("(?<=\\.).+$",new_ext)
+fname_2018_squished_zip <- repl_ext(fname_2018_squished,"zip")
+zip::zip(fname_2018_squished_zip,fname_2018_squished)
+```
+
+Checa se encoding está ok
+
+```{r,cache=T}
+guess_encoding(fname_2018_squished_zip)
+```
+
+Checa tamanho dos arquivos
+
+```{r}
+dir_info("data") %>% select(path,size,modification_time)
+```
