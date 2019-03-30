@@ -69,23 +69,45 @@ df_orcamento %>% ggplot(aes(Empenho)) +
   scale_x_log10()
 ```
 
-Estudo dos Órgãos
+# Estudo por Órgãos
+
+Quantos por órgão?
 
 ```{r,cache=T}
-df_orcamento %>% count(`Órgão`,`Nome Órgão`)
+df_orcamento %>%
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  count(orgao_cod,orgao,sort=T)
 ```
 
-Ordenando pelo mais frequente
+Nomes de órgãos são únicos por código? Parece que há um problema no código 40
 
 ```{r,cache=T}
-df_orcamento %>% count(`Órgão`,`Nome Órgão`,sort=T)
+df_orcamento %>%
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  count(orgao_cod,orgao) %>%
+  count(orgao_cod,sort=T)
 ```
 
-Empenho por órgão:
+Quem é número 40 e em quais formas aparece?
 
 ```{r}
 df_orcamento %>%
-  group_by(`Nome Órgão`) %>%
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  count(orgao_cod,orgao) %>%
+  filter(orgao_cod==40)
+```
+
+Empenho por órgão, harmonizando orgao_cod=40:
+
+```{r}
+df_orcamento %>%
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao)) %>%
+  group_by(orgao) %>%
   summarize(n=n(),
             total=sum(Empenho),
             media=mean(Empenho),
@@ -95,12 +117,21 @@ df_orcamento %>%
   arrange(-total)
 ```
 
+Remove prefixos de nomes de órgãos
+
+```{r}
+clean_orgao <- function(orgao) orgao %>%
+  str_remove("^Secretaria d[aeo] Estado d[aeo] ")
+```
+
 Empenho total por órgão: Top 5
 
 ```{r}
 df_orcamento %>%
-  rename(orgao=`Nome Órgão`) %>%
-  mutate(orgao=orgao%>%str_remove("^Secretaria d[aeo] Estado d[aeo] "),
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao),
+         orgao=orgao%>%clean_orgao,
          orgao=orgao%>%fct_reorder(-Empenho,sum)) %>%
   filter(as.integer(orgao)<6) %>%
   mutate(orgao=orgao%>%fct_rev) %>%
@@ -120,11 +151,14 @@ Distribuição do Empenho por Órgão (boxbplot)
 
 ```{r}
 df_orcamento %>%
-  rename(orgao=`Nome Órgão`) %>%
-  mutate(orgao=orgao%>%str_remove("^Secretaria d[aeo] Estado d[aeo] "),
-         orgao=orgao%>%fct_reorder(-Empenho)) %>%
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao),
+         orgao=orgao%>%clean_orgao,
+         orgao=orgao%>%fct_reorder(-Empenho,median)) %>%
   filter(as.integer(orgao)<6) %>%
   mutate(orgao=orgao%>%fct_rev) %>%
+  filter(Empenho>=10) %>% 
   ggplot(aes(orgao,Empenho)) +
   geom_boxplot(aes(fill=orgao),notch=T) +
   scale_y_log10() +
@@ -133,5 +167,145 @@ df_orcamento %>%
        subtitle="Ano 2018, Top 5 medianas") +
   theme(legend.position = "none",
         axis.title.y=element_blank())
+```
+
+# Estudos sobre todos os anos
+Comprime todos os arquivos .csv (retira espaços extra)
+
+```{r,eval=F}
+source("preparo_util.R")
+fnames <- dir_ls("data",regexp="despesa\\d{4}\\.csv")
+fnames %>% walk(squish_file)
+```
+
+```{r}
+fnames_squished <- dir_ls("data",regexp="despesa\\d{4}_squished\\.zip")%>%
+  as.character
+fnames_squished
+```
+
+Extrai ano de cada nome de arqiuvo
+
+```{r}
+anos <- map_chr(fnames_squished,str_extract,"\\d{4}")
+anos
+```
+
+Lê todos os arquivos (sem descomprimir .zip), adiciona coluna "ano"
+
+```{r,cache=T}
+df_all <- fnames_squished %>%
+  map2_dfr(anos,~{read_delim(.x,delim=";",quote="^")%>%
+      mutate(ano=.y)%>%
+      select(ano,everything())})
+```
+
+Limpa nome de orgao de maneira mais genérica
+
+```{r}
+clean_orgao_gen <- function(orgao) orgao %>%
+  str_remove_all("[^[:alpha:]\\s]") %>%
+  str_remove_all("Sec(ret|retaria)? ?d[aeo] Est(ado)? (d[aeo])?") %>%
+  str_remove_all("Sec Est de ")
+  #str_remove("^Sec(retaria|ret)?\\.? ?d[aeo] Est.?(ado)? d[aeo] ?")
+```
+
+
+Cria tabela de referência p/ nomes de órgãos (usa o primeiro a aparecer)
+
+```{r}
+df_orgao_ref <- df_all %>%
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  group_by(orgao_cod) %>%
+  summarize(n=n(),orgao_list=list(orgao)) %>%
+  mutate(orgao_ref=map_chr(orgao_list,first)) %>%
+  select(orgao_cod,orgao_ref) %>%
+  mutate(orgao_ref=orgao_ref%>%clean_orgao_gen) %>%
+  arrange(orgao_cod)
+df_orgao_ref
+```
+
+Órgão com maior empenho histórico
+
+```{r}
+df_all_top_orgaos_empenho <- df_all %>%
+  rename(orgao_cod=`Órgão`) %>%
+  group_by(orgao_cod) %>%
+  summarize(n=n(),total=sum(Empenho)) %>%
+  arrange(desc(total)) %>%
+  head(5) %>%
+  inner_join(df_orgao_ref,by="orgao_cod") %>%
+  select(orgao_cod,orgao_ref,everything()) %>%
+  mutate(media_anual=total/length(anos))
+df_all_top_orgaos_empenho
+```
+
+Plota médias anuais
+
+```{r}
+df_all_top_orgaos_empenho%>%
+  mutate(orgao_ref=orgao_ref%>%fct_inorder()%>%fct_rev)%>%
+  ggplot(aes(orgao_ref,media_anual/10^6)) +
+  geom_col(aes(fill=orgao_ref)) +
+  coord_flip() +
+  labs(title="Média de Empenhos Anuais por Órgão",
+       subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
+       y="Empenho Anual Médio (R$ milhões)") +
+  theme(legend.position = "none",
+        axis.title.y=element_blank())
+```
+
+
+Evolução história do empenho destes top órgãos:
+
+```{r}
+df_all %>%
+  rename(orgao_cod=`Órgão`) %>%
+  inner_join(df_all_top_orgaos_empenho%>%
+               select(orgao_cod,orgao=orgao_ref),
+             by="orgao_cod") %>%
+  group_by(ano,orgao) %>%
+  summarize(total=sum(Empenho)/10^6) %>%
+  arrange(desc(total)) %>%
+  mutate(orgao=orgao%>%fct_inorder) %>%
+  ggplot(aes(ano,total,group=orgao,color=orgao)) +
+  geom_line(size=I(1)) +
+  # scale_y_log10() +
+  labs(title="Empenho Anual por Órgão",
+       subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
+       y = "Empenho Total (R$ milhões)")
+```
+
+Com log-scale:
+
+```{r}
+df_all %>%
+  rename(orgao_cod=`Órgão`) %>%
+  inner_join(df_all_top_orgaos_empenho%>%
+               select(orgao_cod,orgao=orgao_ref),
+             by="orgao_cod") %>%
+  group_by(ano,orgao) %>%
+  summarize(total=sum(Empenho)/10^6) %>%
+  arrange(desc(total)) %>%
+  mutate(orgao=orgao%>%fct_inorder) %>%
+  ggplot(aes(ano,total,group=orgao,color=orgao)) +
+  geom_line(size=I(1)) +
+  scale_y_log10() +
+  labs(title="Empenho Anual por Órgão",
+       subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
+       y = "Empenho Total (R$ milhões)")
+```
+
+Para cada ano, quais sao os top órgaos por empenho total?
+
+```{r}
+df_all_orgao <- df_all %>%
+  rename(orgao=`Nome Órgão`) %>%
+  group_by(ano,orgao) %>%
+  summarize(n=n(),total=sum(Empenho)) %>%
+  group_by(ano) %>%
+  top_n(5,total) %>%
+  arrange(ano,desc(total))
 ```
 
