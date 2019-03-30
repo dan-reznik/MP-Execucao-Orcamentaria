@@ -1,0 +1,55 @@
+---
+title: "Empenho: Preparo Série Histórica"
+output: github_document
+---
+  
+  Inclusão de pacotes
+
+```{r setup,message=F}
+library(tidyverse)
+library(fs)
+source("preparo_util.R")
+```
+
+Comprime todos os arquivos .csv (retira espaços extra)
+
+```{r,eval=F}
+fnames <- dir_ls("data",regexp="despesa\\d{4}\\.csv")
+fnames %>% walk(squish_file)
+```
+
+
+```{r}
+fnames_squished <- dir_ls("data",regexp="despesa\\d{4}_squished\\.zip") %>%
+  as.character
+fnames_squished
+```
+
+Extrai ano de cada nome de arqiuvo
+
+```{r}
+anos <- map_chr(fnames_squished,str_extract,"\\d{4}")
+anos
+```
+
+Lê todos os arquivos (sem descomprimir .zip), adiciona coluna "ano", e concatena num só data frame
+
+```{r,eval=F}
+df_all <- fnames_squished %>%
+  map2_dfr(anos,~{read_delim(.x,delim=";",quote="^")%>%
+      mutate(ano=.y)%>%
+      select(ano,everything())}) %>%
+  mutate_if(is.character,as.factor) # taking long...
+nrow(df_all)
+```
+
+Escreve num arquivo do r (formato RDS)
+```{r,eval=F}
+df_all %>% write_rds("data/df_all.rds",compress="bz2")
+```
+
+Apaga da memória
+```{r,eval=F}
+rm(df_all)
+```
+

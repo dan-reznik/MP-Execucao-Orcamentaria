@@ -16,5 +16,7 @@ Projeto 1: Execução Orçamentária
   - Arquivos incluídos:
       - Preparo de Dados: [preparo.Rmd](preparo.md)
       - Análise do Empenho (ano 2018): [empenho.Rmd](empenho.md)
-      - Análise Histórica do Empenho (anos 2014-8):
+      - Preparo dos Dados (anos 2014-8):
+        [preparo\_anos.Rmd](preparo_anos.md)
+      - Análise do Empenho, série histórica (anos 2014-8):
         [empenho\_anos.Rmd](empenho_anos.md)

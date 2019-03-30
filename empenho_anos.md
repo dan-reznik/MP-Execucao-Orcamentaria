@@ -5,43 +5,12 @@ Inclusão de pacotes
 
 ``` r
 library(tidyverse)
-library(fs)
-source("preparo_util.R")
 ```
 
-Comprime todos os arquivos .csv (retira espaços extra)
+Lê do arquivo “.rds” preparado em `preparo_anos.Rmd`
 
 ``` r
-fnames <- dir_ls("data",regexp="despesa\\d{4}\\.csv")
-fnames %>% walk(squish_file)
-```
-
-``` r
-fnames_squished <- dir_ls("data",regexp="despesa\\d{4}_squished\\.zip")%>%
-  as.character
-fnames_squished
-```
-
-    ## [1] "data/despesa2014_squished.zip" "data/despesa2015_squished.zip"
-    ## [3] "data/despesa2016_squished.zip" "data/despesa2017_squished.zip"
-    ## [5] "data/despesa2018_squished.zip"
-
-Extrai ano de cada nome de arqiuvo
-
-``` r
-anos <- map_chr(fnames_squished,str_extract,"\\d{4}")
-anos
-```
-
-    ## [1] "2014" "2015" "2016" "2017" "2018"
-
-Lê todos os arquivos (sem descomprimir .zip), adiciona coluna “ano”
-
-``` r
-df_all <- fnames_squished %>%
-  map2_dfr(anos,~{read_delim(.x,delim=";",quote="^")%>%
-      mutate(ano=.y)%>%
-      select(ano,everything())})
+df_all <- read_rds("data/df_all.rds")
 nrow(df_all)
 ```
 
@@ -63,6 +32,7 @@ Cria tabela de referência p/ nomes de órgãos (usa o primeiro a aparecer)
 df_orgao_ref <- df_all %>%
   rename(orgao_cod=`Órgão`,
          orgao=`Nome Órgão`) %>%
+  mutate(orgao=orgao%>%as.character) %>% # era fatir
   group_by(orgao_cod) %>%
   summarize(n=n(),orgao_list=list(orgao)) %>%
   mutate(orgao_ref=map_chr(orgao_list,first)) %>%
@@ -74,7 +44,7 @@ df_orgao_ref
 
     ## # A tibble: 34 x 2
     ##    orgao_cod orgao_ref                         
-    ##    <chr>     <chr>                             
+    ##    <fct>     <chr>                             
     ##  1 01        Assembléia Legislativa            
     ##  2 02        Tribunal de Contas do Estado do RJ
     ##  3 03        Tribunal de Justiça               
@@ -90,6 +60,8 @@ df_orgao_ref
 Órgãos com maior empenho total (top 5)
 
 ``` r
+anos <- unique(df_all$ano%>%as.character)%>%as.integer
+
 df_all_top_orgaos_empenho <- df_all %>%
   rename(orgao_cod=`Órgão`) %>%
   group_by(orgao_cod) %>%
@@ -104,7 +76,7 @@ df_all_top_orgaos_empenho
 
     ## # A tibble: 5 x 5
     ##   orgao_cod orgao_ref                      n      total media_anual
-    ##   <chr>     <chr>                      <int>      <dbl>       <dbl>
+    ##   <fct>     <chr>                      <int>      <dbl>       <dbl>
     ## 1 18        " Educação"               155203 2208575029  441715006.
     ## 2 29        " Saúde"                   77625  242259450   48451890 
     ## 3 40        " Ciência e Tecnologia"    93202  161507216   32301443.
@@ -126,7 +98,7 @@ df_all_top_orgaos_empenho%>%
         axis.title.y=element_blank())
 ```
 
-![](empenho_anos_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](empenho_anos_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 Evolução história do empenho destes top órgãos:
 
@@ -148,7 +120,7 @@ df_all %>%
        y = "Empenho Total (R$ milhões)")
 ```
 
-![](empenho_anos_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](empenho_anos_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 Com log-scale:
 
@@ -171,7 +143,7 @@ df_all %>%
         legend.title = element_blank())
 ```
 
-![](empenho_anos_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](empenho_anos_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 Distribuição de empenho por ano (faceteamento)
 
@@ -193,4 +165,4 @@ df_all %>%
         axis.title.y=element_blank())
 ```
 
-![](empenho_anos_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](empenho_anos_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->

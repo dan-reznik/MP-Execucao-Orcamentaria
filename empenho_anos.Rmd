@@ -7,36 +7,12 @@ Inclusão de pacotes
 
 ```{r setup,message=F}
 library(tidyverse)
-library(fs)
-source("preparo_util.R")
-```
-Comprime todos os arquivos .csv (retira espaços extra)
-
-```{r,eval=F}
-fnames <- dir_ls("data",regexp="despesa\\d{4}\\.csv")
-fnames %>% walk(squish_file)
 ```
 
-```{r}
-fnames_squished <- dir_ls("data",regexp="despesa\\d{4}_squished\\.zip")%>%
-  as.character
-fnames_squished
-```
+Lê do arquivo ".rds" preparado em `preparo_anos.Rmd`
 
-Extrai ano de cada nome de arqiuvo
-
-```{r}
-anos <- map_chr(fnames_squished,str_extract,"\\d{4}")
-anos
-```
-
-Lê todos os arquivos (sem descomprimir .zip), adiciona coluna "ano"
-
-```{r,cache=T,message=F}
-df_all <- fnames_squished %>%
-  map2_dfr(anos,~{read_delim(.x,delim=";",quote="^")%>%
-      mutate(ano=.y)%>%
-      select(ano,everything())})
+```{r,cache=T}
+df_all <- read_rds("data/df_all.rds")
 nrow(df_all)
 ```
 
@@ -56,6 +32,7 @@ Cria tabela de referência p/ nomes de órgãos (usa o primeiro a aparecer)
 df_orgao_ref <- df_all %>%
   rename(orgao_cod=`Órgão`,
          orgao=`Nome Órgão`) %>%
+  mutate(orgao=orgao%>%as.character) %>% # era fatir
   group_by(orgao_cod) %>%
   summarize(n=n(),orgao_list=list(orgao)) %>%
   mutate(orgao_ref=map_chr(orgao_list,first)) %>%
@@ -68,6 +45,8 @@ df_orgao_ref
 Órgãos com maior empenho total (top 5)
 
 ```{r,cache=T}
+anos <- unique(df_all$ano%>%as.character)%>%as.integer
+
 df_all_top_orgaos_empenho <- df_all %>%
   rename(orgao_cod=`Órgão`) %>%
   group_by(orgao_cod) %>%

@@ -20,5 +20,5 @@ knitr::include_graphics("pics/transparencia_fiscal.png")
 * Arquivos incluídos:
     + Preparo de Dados: [preparo.Rmd](preparo.md)
     + Análise do Empenho (ano 2018): [empenho.Rmd](empenho.md)
-    + Análise Histórica do Empenho (anos 2014-8): [empenho_anos.Rmd](empenho_anos.md)
-
+    + Preparo dos Dados (anos 2014-8): [preparo_anos.Rmd](preparo_anos.md)
+    + Análise do Empenho, série histórica (anos 2014-8): [empenho_anos.Rmd](empenho_anos.md)
