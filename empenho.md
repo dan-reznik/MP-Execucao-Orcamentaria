@@ -14,14 +14,16 @@ Checa tamanho dos arquivos
 dir_info("data") %>% select(path,size,modification_time)
 ```
 
-    ## # A tibble: 5 x 3
+    ## # A tibble: 7 x 3
     ##   path                                 size modification_time  
     ##   <fs::path>                    <fs::bytes> <dttm>             
     ## 1 data/despesa.zip                  125.32M 2019-03-29 07:40:36
-    ## 2 data/despesa2018.csv              301.04M 2019-03-29 18:05:13
-    ## 3 data/despesa2018.zip               17.98M 2019-03-29 16:40:21
-    ## 4 data/despesa2018_squished.csv      49.34M 2019-03-29 18:06:40
-    ## 5 data/despesa2018_squished.zip       9.08M 2019-03-29 19:43:56
+    ## 2 data/despesa2014_squished.zip      17.07M 2019-03-30 09:25:37
+    ## 3 data/despesa2015_squished.zip      15.59M 2019-03-30 09:26:24
+    ## 4 data/despesa2016_squished.zip      12.67M 2019-03-30 09:27:04
+    ## 5 data/despesa2017_squished.zip      11.61M 2019-03-30 09:27:41
+    ## 6 data/despesa2018.zip               17.98M 2019-03-29 16:40:21
+    ## 7 data/despesa2018_squished.zip       9.08M 2019-03-30 09:28:10
 
 # Leitura de Dados Higienizados
 
@@ -167,53 +169,82 @@ df_orcamento %>% ggplot(aes(Empenho)) +
 
 ![](empenho_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
-Estudo dos Órgãos
+# Estudo por Órgãos
 
-``` r
-df_orcamento %>% count(`Órgão`,`Nome Órgão`)
-```
-
-    ## # A tibble: 27 x 3
-    ##    Órgão `Nome Órgão`                                      n
-    ##    <chr> <chr>                                         <int>
-    ##  1 01    Assembléia Legislativa                          730
-    ##  2 02    Tribunal de Contas do Estado do Rio de Janeir  1385
-    ##  3 03    Tribunal de Justiça do Estado do Rio de Janei  2436
-    ##  4 07    Secretaria de Estado de Obras                  4671
-    ##  5 08    Vice-Governadoria                                93
-    ##  6 09    Procuradoria Geral do Estado                   1636
-    ##  7 10    Ministério Público                             2629
-    ##  8 11    Defensoria Pública Geral do Estado             1163
-    ##  9 13    Secretaria de Estado de Agricultura Pecuária   4800
-    ## 10 14    Secretaria de Estado de Governo                 678
-    ## # ... with 17 more rows
-
-Ordenando pelo mais frequente
-
-``` r
-df_orcamento %>% count(`Órgão`,`Nome Órgão`,sort=T)
-```
-
-    ## # A tibble: 27 x 3
-    ##    Órgão `Nome Órgão`                                      n
-    ##    <chr> <chr>                                         <int>
-    ##  1 18    Secretaria de Estado de Educação              19940
-    ##  2 40    Secretaria de Estado de Ciência Tecnologia    12816
-    ##  3 29    Secretaria de Estado de Saúde                 11056
-    ##  4 21    Secretaria de Estado da Casa Civil e Desenvol 10603
-    ##  5 26    Secretaria de Estado de Segurança              5542
-    ##  6 13    Secretaria de Estado de Agricultura Pecuária   4800
-    ##  7 07    Secretaria de Estado de Obras                  4671
-    ##  8 20    Secretaria de Estado de Fazenda e Planejament  4192
-    ##  9 31    Secretaria de Estado de Transportes            3436
-    ## 10 10    Ministério Público                             2629
-    ## # ... with 17 more rows
-
-Empenho por órgão:
+Quantos por órgão?
 
 ``` r
 df_orcamento %>%
-  group_by(`Nome Órgão`) %>%
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  count(orgao_cod,orgao,sort=T)
+```
+
+    ## # A tibble: 27 x 3
+    ##    orgao_cod orgao                                             n
+    ##    <chr>     <chr>                                         <int>
+    ##  1 18        Secretaria de Estado de Educação              19940
+    ##  2 40        Secretaria de Estado de Ciência Tecnologia    12816
+    ##  3 29        Secretaria de Estado de Saúde                 11056
+    ##  4 21        Secretaria de Estado da Casa Civil e Desenvol 10603
+    ##  5 26        Secretaria de Estado de Segurança              5542
+    ##  6 13        Secretaria de Estado de Agricultura Pecuária   4800
+    ##  7 07        Secretaria de Estado de Obras                  4671
+    ##  8 20        Secretaria de Estado de Fazenda e Planejament  4192
+    ##  9 31        Secretaria de Estado de Transportes            3436
+    ## 10 10        Ministério Público                             2629
+    ## # ... with 17 more rows
+
+Nomes de órgãos são únicos por código? Parece que há um problema no
+código 40
+
+``` r
+df_orcamento %>%
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  count(orgao_cod,orgao) %>%
+  count(orgao_cod,sort=T)
+```
+
+    ## # A tibble: 26 x 2
+    ##    orgao_cod    nn
+    ##    <chr>     <int>
+    ##  1 40            2
+    ##  2 01            1
+    ##  3 02            1
+    ##  4 03            1
+    ##  5 07            1
+    ##  6 08            1
+    ##  7 09            1
+    ##  8 10            1
+    ##  9 11            1
+    ## 10 13            1
+    ## # ... with 16 more rows
+
+Quem é número 40 e em quais formas aparece?
+
+``` r
+df_orcamento %>%
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  count(orgao_cod,orgao) %>%
+  filter(orgao_cod==40)
+```
+
+    ## # A tibble: 2 x 3
+    ##   orgao_cod orgao                                            n
+    ##   <chr>     <chr>                                        <int>
+    ## 1 40        Secretaria de Estado de Ciência Tecnologia   12816
+    ## 2 40        Secretaria de Estado de Ciência Tecnologia I  1062
+
+Empenho por órgão, harmonizando orgao\_cod=40:
+
+``` r
+df_orcamento %>%
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao)) %>%
+  group_by(orgao) %>%
   summarize(n=n(),
             total=sum(Empenho),
             media=mean(Empenho),
@@ -223,12 +254,12 @@ df_orcamento %>%
   arrange(-total)
 ```
 
-    ## # A tibble: 27 x 7
-    ##    `Nome Órgão`                 n   total media mediana desvio_padrao   mad
+    ## # A tibble: 26 x 7
+    ##    orgao                        n   total media mediana desvio_padrao   mad
     ##    <chr>                    <int>   <dbl> <dbl>   <dbl>         <dbl> <dbl>
     ##  1 Secretaria de Estado de~ 19940  1.76e8 8837.   8546.         6089. 7346.
     ##  2 Secretaria de Estado de~ 11056  2.50e7 2257.   1668.         2086. 1817.
-    ##  3 Secretaria de Estado de~ 12816  9.15e6  714.    483           712.  506.
+    ##  3 Secretaria de Estado de~ 13878  1.07e7  771.    536.          754.  557.
     ##  4 Secretaria de Estado da~ 10603  8.48e6  800.    413          1013.  430.
     ##  5 Secretaria de Estado de~  5542  4.40e6  795.    623           640.  623.
     ##  6 Secretaria de Estado de~  4671  4.03e6  862.    539           800.  652.
@@ -236,14 +267,23 @@ df_orcamento %>%
     ##  8 Secretaria de Estado do~  2565  1.98e6  773.    670           638.  802.
     ##  9 Secretaria de Estado de~  4192  1.83e6  436.    313           397.  317.
     ## 10 Secretaria de Estado de~  4800  1.78e6  371.    302           281.  310.
-    ## # ... with 17 more rows
+    ## # ... with 16 more rows
+
+Remove prefixos de nomes de órgãos
+
+``` r
+clean_orgao <- function(orgao) orgao %>%
+  str_remove("^Secretaria d[aeo] Estado d[aeo] ")
+```
 
 Empenho total por órgão: Top 5
 
 ``` r
 df_orcamento %>%
-  rename(orgao=`Nome Órgão`) %>%
-  mutate(orgao=orgao%>%str_remove("^Secretaria d[aeo] Estado d[aeo] "),
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao),
+         orgao=orgao%>%clean_orgao,
          orgao=orgao%>%fct_reorder(-Empenho,sum)) %>%
   filter(as.integer(orgao)<6) %>%
   mutate(orgao=orgao%>%fct_rev) %>%
@@ -259,17 +299,20 @@ df_orcamento %>%
         axis.title.y=element_blank())
 ```
 
-![](empenho_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](empenho_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 Distribuição do Empenho por Órgão (boxbplot)
 
 ``` r
 df_orcamento %>%
-  rename(orgao=`Nome Órgão`) %>%
-  mutate(orgao=orgao%>%str_remove("^Secretaria d[aeo] Estado d[aeo] "),
-         orgao=orgao%>%fct_reorder(-Empenho)) %>%
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao),
+         orgao=orgao%>%clean_orgao,
+         orgao=orgao%>%fct_reorder(-Empenho,median)) %>%
   filter(as.integer(orgao)<6) %>%
   mutate(orgao=orgao%>%fct_rev) %>%
+  filter(Empenho>=10) %>% 
   ggplot(aes(orgao,Empenho)) +
   geom_boxplot(aes(fill=orgao),notch=T) +
   scale_y_log10() +
@@ -280,4 +323,4 @@ df_orcamento %>%
         axis.title.y=element_blank())
 ```
 
-![](empenho_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](empenho_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->

@@ -1,0 +1,158 @@
+---
+title: "Empenho: Série Histórica"
+output: github_document
+---
+
+Inclusão de pacotes
+
+```{r setup,message=F}
+library(tidyverse)
+library(fs)
+source("preparo_util.R")
+```
+Comprime todos os arquivos .csv (retira espaços extra)
+
+```{r,eval=F}
+fnames <- dir_ls("data",regexp="despesa\\d{4}\\.csv")
+fnames %>% walk(squish_file)
+```
+
+```{r}
+fnames_squished <- dir_ls("data",regexp="despesa\\d{4}_squished\\.zip")%>%
+  as.character
+fnames_squished
+```
+
+Extrai ano de cada nome de arqiuvo
+
+```{r}
+anos <- map_chr(fnames_squished,str_extract,"\\d{4}")
+anos
+```
+
+Lê todos os arquivos (sem descomprimir .zip), adiciona coluna "ano"
+
+```{r,cache=T,message=F}
+df_all <- fnames_squished %>%
+  map2_dfr(anos,~{read_delim(.x,delim=";",quote="^")%>%
+      mutate(ano=.y)%>%
+      select(ano,everything())})
+nrow(df_all)
+```
+
+Limpa nome de orgao de maneira mais genérica
+
+```{r}
+clean_orgao_gen <- function(orgao) orgao %>%
+  str_remove_all("[^[:alpha:]\\s]") %>%
+  str_remove_all("Sec(ret|retaria)? ?d[aeo] Est(ado)? (d[aeo])?") %>%
+  str_remove_all("Sec Est de ")
+  #str_remove("^Sec(retaria|ret)?\\.? ?d[aeo] Est.?(ado)? d[aeo] ?")
+```
+
+Cria tabela de referência p/ nomes de órgãos (usa o primeiro a aparecer)
+
+```{r,cache=T}
+df_orgao_ref <- df_all %>%
+  rename(orgao_cod=`Órgão`,
+         orgao=`Nome Órgão`) %>%
+  group_by(orgao_cod) %>%
+  summarize(n=n(),orgao_list=list(orgao)) %>%
+  mutate(orgao_ref=map_chr(orgao_list,first)) %>%
+  select(orgao_cod,orgao_ref) %>%
+  mutate(orgao_ref=orgao_ref%>%clean_orgao_gen) %>%
+  arrange(orgao_cod)
+df_orgao_ref
+```
+
+Órgãos com maior empenho total (top 5)
+
+```{r,cache=T}
+df_all_top_orgaos_empenho <- df_all %>%
+  rename(orgao_cod=`Órgão`) %>%
+  group_by(orgao_cod) %>%
+  summarize(n=n(),total=sum(Empenho)) %>%
+  arrange(desc(total)) %>%
+  head(5) %>%
+  inner_join(df_orgao_ref,by="orgao_cod") %>%
+  select(orgao_cod,orgao_ref,everything()) %>%
+  mutate(media_anual=total/length(anos))
+df_all_top_orgaos_empenho
+```
+
+Plota médias anuais
+
+```{r,cache=T}
+df_all_top_orgaos_empenho%>%
+  mutate(orgao_ref=orgao_ref%>%fct_inorder()%>%fct_rev)%>%
+  ggplot(aes(orgao_ref,media_anual/10^6)) +
+  geom_col(aes(fill=orgao_ref)) +
+  coord_flip() +
+  labs(title="Média de Empenhos Anuais por Órgão",
+       subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
+       y="Empenho Anual Médio (R$ milhões)") +
+  theme(legend.position = "none",
+        axis.title.y=element_blank())
+```
+
+Evolução história do empenho destes top órgãos:
+
+```{r,cache=T}
+df_all %>%
+  rename(orgao_cod=`Órgão`) %>%
+  inner_join(df_all_top_orgaos_empenho%>%
+               select(orgao_cod,orgao=orgao_ref),
+             by="orgao_cod") %>%
+  group_by(ano,orgao) %>%
+  summarize(total=sum(Empenho)/10^6) %>%
+  arrange(desc(total)) %>%
+  mutate(orgao=orgao%>%fct_inorder) %>%
+  ggplot(aes(ano,total,group=orgao,color=orgao)) +
+  geom_line(size=I(1)) +
+  # scale_y_log10() +
+  labs(title="Empenho Anual por Órgão",
+       subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
+       y = "Empenho Total (R$ milhões)")
+```
+
+Com log-scale:
+
+```{r,cache=T}
+df_all %>%
+  rename(orgao_cod=`Órgão`) %>%
+  inner_join(df_all_top_orgaos_empenho%>%
+               select(orgao_cod,orgao=orgao_ref),
+             by="orgao_cod") %>%
+  group_by(ano,orgao) %>%
+  summarize(total=sum(Empenho)/10^6) %>%
+  mutate(orgao=orgao%>%fct_reorder(total,sum)%>%fct_rev) %>%
+  ggplot(aes(ano,total,group=orgao,color=orgao)) +
+  geom_line(size=I(1)) +
+  scale_y_log10() +
+  labs(title="Empenho Anual por Órgão",
+       subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
+       y = "Empenho Total (R$ milhões)") +
+  theme(legend.position = "bottom",
+        legend.title = element_blank())
+```
+
+Distribuição de empenho por ano (faceteamento)
+
+```{r,cache=T}
+df_all %>%
+  rename(orgao_cod=`Órgão`) %>%
+  inner_join(df_all_top_orgaos_empenho%>%
+               select(orgao_cod,orgao=orgao_ref),
+             by="orgao_cod") %>%
+  mutate(orgao=orgao%>%fct_reorder(Empenho,sum)) %>%
+  ggplot(aes(orgao,Empenho)) +
+  geom_boxplot(aes(fill=orgao),outlier.shape=NA) +
+  scale_y_log10(breaks=10^(1:5),labels=10^(1:5)%>%as.integer) +
+  coord_flip(ylim=c(10,.5*10^5)) +
+  facet_wrap(~ano,ncol=2) +
+  labs(title="Distribuição do Empenho por Ano",
+       y = "Empenho Anual") +
+  theme(legend.position = "none",
+        axis.title.y=element_blank())
+```
+
