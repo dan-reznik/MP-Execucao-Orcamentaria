@@ -24,7 +24,7 @@ Colocar num data frame ("tibble"). Nota: arquivo agora 'e UTF-8
 fname_2018_squished_zip <- "data/despesa2018_squished.zip"
 df_orcamento <- read_delim(fname_2018_squished_zip,delim=";",
                            quote="'") # evita erro com "
-df_orcamento
+glimpse(df_orcamento)
 ```
 
 ```{r}
@@ -37,11 +37,6 @@ Quantas linhas, colunas, ou dimensões?
 nrow(df_orcamento)
 ncol(df_orcamento)
 dim(df_orcamento)
-```
-
-Examinando data frame verticalmente
-```{r}
-glimpse(df_orcamento)
 ```
 
 # Análise do "Empenho"
@@ -61,7 +56,7 @@ df_orcamento$Empenho %>% is.na %>% sum
 
 Plota histograma do Empenho
 
-```{r.cache=T}
+```{r,cache=T}
 df_orcamento %>% ggplot(aes(Empenho)) +
   geom_histogram(bins=30,fill="blue",color="black")
 ```

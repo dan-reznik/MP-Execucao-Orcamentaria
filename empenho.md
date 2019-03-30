@@ -51,62 +51,6 @@ df_orcamento <- read_delim(fname_2018_squished_zip,delim=";",
     ## See spec(...) for full column specifications.
 
 ``` r
-df_orcamento
-```
-
-    ## # A tibble: 99,362 x 32
-    ##    Poder `Nome Poder` Grupo `Nome Grupo` `Modalidade de ~ `Nome Modalidad~
-    ##    <dbl> <chr>        <dbl> <lgl>                   <dbl> <chr>           
-    ##  1     1 Executivo        3 NA                         90 Aplicações Dire~
-    ##  2     1 Executivo        3 NA                         90 Aplicações Dire~
-    ##  3     1 Executivo        3 NA                         90 Aplicações Dire~
-    ##  4     1 Executivo        3 NA                         90 Aplicações Dire~
-    ##  5     1 Executivo        3 NA                         90 Aplicações Dire~
-    ##  6     1 Executivo        3 NA                         90 Aplicações Dire~
-    ##  7     1 Executivo        3 NA                         90 Aplicações Dire~
-    ##  8     1 Executivo        3 NA                         90 Aplicações Dire~
-    ##  9     1 Executivo        3 NA                         90 Aplicações Dire~
-    ## 10     1 Executivo        3 NA                         90 Aplicações Dire~
-    ## # ... with 99,352 more rows, and 26 more variables: Elemento <dbl>, `Nome
-    ## #   Elemento` <chr>, `Sub Elemento` <dbl>, `Nome Sub Elemento` <chr>,
-    ## #   Órgão <chr>, `Nome Órgão` <chr>, UO <chr>, `Nome UO` <chr>, UG <chr>,
-    ## #   `Nome UG` <chr>, Credor <chr>, `Nome Credor` <chr>, `Fonte de
-    ## #   Recursos` <chr>, `Nome Fonte de Recursos` <chr>, Processo <chr>,
-    ## #   Função <chr>, `Nome Função` <chr>, `Sub Função` <chr>, `Nome Sub
-    ## #   Função` <chr>, Licitação <chr>, `Nome Licitação` <chr>, Empenho <dbl>,
-    ## #   Histórico <chr>, `Valor Empenhado` <dbl>, `Valor Liquidado` <dbl>,
-    ## #   `Valor Pago` <dbl>
-
-``` r
-problems(df_orcamento)
-```
-
-    ## # tibble [0 x 4]
-    ## # ... with 4 variables: row <int>, col <int>, expected <chr>, actual <chr>
-
-Quantas linhas, colunas, ou dimensões?
-
-``` r
-nrow(df_orcamento)
-```
-
-    ## [1] 99362
-
-``` r
-ncol(df_orcamento)
-```
-
-    ## [1] 32
-
-``` r
-dim(df_orcamento)
-```
-
-    ## [1] 99362    32
-
-Examinando data frame verticalmente
-
-``` r
 glimpse(df_orcamento)
 ```
 
@@ -144,6 +88,33 @@ glimpse(df_orcamento)
     ## $ `Valor Empenhado`              <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
     ## $ `Valor Liquidado`              <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
     ## $ `Valor Pago`                   <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
+
+``` r
+problems(df_orcamento)
+```
+
+    ## # tibble [0 x 4]
+    ## # ... with 4 variables: row <int>, col <int>, expected <chr>, actual <chr>
+
+Quantas linhas, colunas, ou dimensões?
+
+``` r
+nrow(df_orcamento)
+```
+
+    ## [1] 99362
+
+``` r
+ncol(df_orcamento)
+```
+
+    ## [1] 32
+
+``` r
+dim(df_orcamento)
+```
+
+    ## [1] 99362    32
 
 # Análise do “Empenho”
 
@@ -184,7 +155,7 @@ df_orcamento %>% ggplot(aes(Empenho)) +
   geom_histogram(bins=30,fill="blue",color="black")
 ```
 
-![](empenho_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](empenho_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 Aplica “log” no valor:
 
@@ -194,7 +165,7 @@ df_orcamento %>% ggplot(aes(Empenho)) +
   scale_x_log10()
 ```
 
-![](empenho_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](empenho_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 Estudo dos Órgãos
 
@@ -287,7 +258,7 @@ df_orcamento %>%
         axis.title.y=element_blank())
 ```
 
-![](empenho_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](empenho_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 Distribuição do Empenho por Órgão (boxbplot)
 
@@ -307,7 +278,7 @@ df_orcamento %>%
         axis.title.y=element_blank())
 ```
 
-![](empenho_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](empenho_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 Distribuição do Empenho por Órgão (violin plot)
 
@@ -327,4 +298,4 @@ df_orcamento %>%
         axis.title.y=element_blank())
 ```
 
-![](empenho_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](empenho_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
