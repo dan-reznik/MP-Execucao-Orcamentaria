@@ -14,16 +14,13 @@ Checa tamanho dos arquivos
 dir_info("data") %>% select(path,size,modification_time)
 ```
 
-    ## # A tibble: 7 x 3
+    ## # A tibble: 4 x 3
     ##   path                                 size modification_time  
     ##   <fs::path>                    <fs::bytes> <dttm>             
     ## 1 data/despesa.zip                  125.32M 2019-03-29 07:40:36
-    ## 2 data/despesa2014_squished.zip      17.07M 2019-03-30 09:25:37
-    ## 3 data/despesa2015_squished.zip      15.59M 2019-03-30 09:26:24
-    ## 4 data/despesa2016_squished.zip      12.67M 2019-03-30 09:27:04
-    ## 5 data/despesa2017_squished.zip      11.61M 2019-03-30 09:27:41
-    ## 6 data/despesa2018.zip               17.98M 2019-03-29 16:40:21
-    ## 7 data/despesa2018_squished.zip       9.08M 2019-03-30 09:28:10
+    ## 2 data/despesa2018.zip               17.98M 2019-03-29 16:40:21
+    ## 3 data/despesa2018_squished.zip       9.08M 2019-03-30 11:51:42
+    ## 4 data/df_all.rds                    24.37M 2019-03-30 12:05:39
 
 # Leitura de Dados Higienizados
 

@@ -3,6 +3,13 @@ title: "Projeto 1: Execução Orçamentária"
 output: github_document
 ---
 
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
 ```{r,eval=T,echo=F}
 knitr::include_graphics("pics/transparencia_fiscal.png")
 ```
