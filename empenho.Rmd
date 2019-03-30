@@ -100,7 +100,8 @@ Empenho total por órgão: Top 5
 ```{r}
 df_orcamento %>%
   rename(orgao=`Nome Órgão`) %>%
-  mutate(orgao=orgao%>%fct_reorder(-Empenho,sum)) %>%
+  mutate(orgao=orgao%>%str_remove("^Secretaria d[aeo] Estado d[aeo] "),
+         orgao=orgao%>%fct_reorder(-Empenho,sum)) %>%
   filter(as.integer(orgao)<6) %>%
   mutate(orgao=orgao%>%fct_rev) %>%
   group_by(orgao) %>%
@@ -108,46 +109,29 @@ df_orcamento %>%
   ggplot(aes(orgao,total)) +
   geom_col(aes(fill=orgao)) +
   coord_flip() +
-  labs(title="Empenho Total por Órgão: Top 5",
-       subtitle="Ano 2018",
+  labs(title="Empenho Total por Órgão",
+       subtitle="Ano 2018, Top 5",
        y="Empenho Total (R$ milhões)") +
   theme(legend.position = "none",
         axis.title.y=element_blank())
 ```
 
-
 Distribuição do Empenho por Órgão (boxbplot)
 
-```{r,cache=T}
+```{r}
 df_orcamento %>%
   rename(orgao=`Nome Órgão`) %>%
-  mutate(orgao=orgao%>%fct_reorder(-Empenho)) %>%
+  mutate(orgao=orgao%>%str_remove("^Secretaria d[aeo] Estado d[aeo] "),
+         orgao=orgao%>%fct_reorder(-Empenho)) %>%
   filter(as.integer(orgao)<6) %>%
   mutate(orgao=orgao%>%fct_rev) %>%
   ggplot(aes(orgao,Empenho)) +
   geom_boxplot(aes(fill=orgao),notch=T) +
   scale_y_log10() +
   coord_flip() +
-  labs(title="Empenhos Medianos por Órgão: Top 5",
-       subtitle="Ano 2018") +
+  labs(title="Distribuição dos Empenhos por Órgão",
+       subtitle="Ano 2018, Top 5 medianas") +
   theme(legend.position = "none",
         axis.title.y=element_blank())
 ```
 
-Distribuição do Empenho por Órgão (violin plot)
-
-```{r,cache=T}
-df_orcamento %>%
-  rename(orgao=`Nome Órgão`) %>%
-  mutate(orgao=orgao%>%fct_reorder(-Empenho)) %>%
-  filter(as.integer(orgao)<6) %>%
-  mutate(orgao=orgao%>%fct_rev) %>%
-  ggplot(aes(orgao,Empenho)) +
-  geom_violin(aes(fill=orgao)) +
-  scale_y_log10() +
-  coord_flip() +
-  labs(title="Empenhos Medianos por Órgão: Top 5",
-       subtitle="Ano 2018") +
-  theme(legend.position = "none",
-        axis.title.y=element_blank())
-```
