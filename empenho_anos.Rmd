@@ -1,5 +1,5 @@
 ---
-title: "Empenho: Série Histórica"
+title: "Análise do Valor Empenhado por Órgão, Anos 2014-2018"
 output: github_document
 ---
 
@@ -30,7 +30,8 @@ Cria tabela de referência p/ nomes de órgãos (usa o primeiro a aparecer)
 
 ```{r,cache=T}
 df_orgao_ref <- df_all %>%
-  rename(orgao_cod=`Órgão`,
+  rename(valor_empenhado=`Valor Empenhado`,
+         orgao_cod=`Órgão`,
          orgao=`Nome Órgão`) %>%
   mutate(orgao=orgao%>%as.character) %>% # era fatir
   group_by(orgao_cod) %>%
@@ -42,95 +43,87 @@ df_orgao_ref <- df_all %>%
 df_orgao_ref
 ```
 
-Órgãos com maior empenho total (top 5)
+Órgãos com maior valor empenhado total (top 5)
 
 ```{r,cache=T}
 anos <- unique(df_all$ano%>%as.character)%>%as.integer
 
-df_all_top_orgaos_empenho <- df_all %>%
-  rename(orgao_cod=`Órgão`) %>%
+df_all_top_orgaos_valor_empenhado <- df_all %>%
+  rename(valor_empenhado=`Valor Empenhado`,
+         orgao_cod=`Órgão`) %>%
   group_by(orgao_cod) %>%
-  summarize(n=n(),total=sum(Empenho)) %>%
+  summarize(n=n(),
+            total=sum(valor_empenhado)) %>%
   arrange(desc(total)) %>%
   head(5) %>%
   inner_join(df_orgao_ref,by="orgao_cod") %>%
   select(orgao_cod,orgao_ref,everything()) %>%
-  mutate(media_anual=total/length(anos))
-df_all_top_orgaos_empenho
+  mutate(media_anual=total/length(anos)) %>%
+  mutate_at(vars(total,media_anual),~(./10^9)%>%as.integer) %>%
+  rename_at(vars(total,media_anual),~str_c(.,"_b")) # billions
+df_all_top_orgaos_valor_empenhado
 ```
 
 Plota médias anuais
 
 ```{r,cache=T}
-df_all_top_orgaos_empenho%>%
+df_all_top_orgaos_valor_empenhado%>%
   mutate(orgao_ref=orgao_ref%>%fct_inorder()%>%fct_rev)%>%
-  ggplot(aes(orgao_ref,media_anual/10^6)) +
+  ggplot(aes(orgao_ref,media_anual_b)) +
   geom_col(aes(fill=orgao_ref)) +
   coord_flip() +
-  labs(title="Média de Empenhos Anuais por Órgão",
+  labs(title="Média de Valores Empenhados Anuais por Órgão",
        subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
-       y="Empenho Anual Médio (R$ milhões)") +
+       y="Valor Empenhado Anual Médio (R$ bilhões)") +
   theme(legend.position = "none",
         axis.title.y=element_blank())
 ```
 
-Evolução história do empenho destes top órgãos:
+Evolução história dos Valores Empenhados destes top órgãos:
 
 ```{r,cache=T}
-df_all %>%
-  rename(orgao_cod=`Órgão`) %>%
-  inner_join(df_all_top_orgaos_empenho%>%
+df_hist <- df_all %>%
+  rename(valor_empenhado=`Valor Empenhado`,
+         orgao_cod=`Órgão`) %>%
+  inner_join(df_all_top_orgaos_valor_empenhado%>%
                select(orgao_cod,orgao=orgao_ref),
              by="orgao_cod") %>%
   group_by(ano,orgao) %>%
-  summarize(total=sum(Empenho)/10^6) %>%
-  arrange(desc(total)) %>%
-  mutate(orgao=orgao%>%fct_inorder) %>%
-  ggplot(aes(ano,total,group=orgao,color=orgao)) +
+  summarize(total_b=sum(valor_empenhado)/10^9) %>%
+  arrange(desc(total_b)) %>%
+  ungroup() %>% # para q proxima linha rode corretamente
+  mutate(orgao=orgao%>%fct_inorder) #
+```
+
+Grafa o histórico:
+
+```{r}
+df_hist %>%
+  ggplot(aes(ano,total_b,group=orgao,color=orgao)) +
   geom_line(size=I(1)) +
   # scale_y_log10() +
-  labs(title="Empenho Anual por Órgão",
+  labs(title="Valor Empenhado Anual por Órgão",
        subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
-       y = "Empenho Total (R$ milhões)")
+       y = "Valor Empenhado Total (R$ bilhões)")
 ```
 
-Com log-scale:
+Distribuição de Valor Empenhado por ano (faceteamento)
 
 ```{r,cache=T}
 df_all %>%
-  rename(orgao_cod=`Órgão`) %>%
-  inner_join(df_all_top_orgaos_empenho%>%
+  rename(valor_empenhado=`Valor Empenhado`,
+         orgao_cod=`Órgão`) %>%
+  inner_join(df_all_top_orgaos_valor_empenhado%>%
                select(orgao_cod,orgao=orgao_ref),
              by="orgao_cod") %>%
-  group_by(ano,orgao) %>%
-  summarize(total=sum(Empenho)/10^6) %>%
-  mutate(orgao=orgao%>%fct_reorder(total,sum)%>%fct_rev) %>%
-  ggplot(aes(ano,total,group=orgao,color=orgao)) +
-  geom_line(size=I(1)) +
-  scale_y_log10() +
-  labs(title="Empenho Anual por Órgão",
-       subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
-       y = "Empenho Total (R$ milhões)") +
-  theme(legend.position = "bottom",
-        legend.title = element_blank())
-```
-
-Distribuição de empenho por ano (faceteamento)
-
-```{r,cache=T}
-df_all %>%
-  rename(orgao_cod=`Órgão`) %>%
-  inner_join(df_all_top_orgaos_empenho%>%
-               select(orgao_cod,orgao=orgao_ref),
-             by="orgao_cod") %>%
-  mutate(orgao=orgao%>%fct_reorder(Empenho,sum)) %>%
-  ggplot(aes(orgao,Empenho)) +
+  mutate(orgao=orgao%>%fct_reorder(valor_empenhado,sum)) %>%
+  ggplot(aes(orgao,valor_empenhado+1)) +
   geom_boxplot(aes(fill=orgao),outlier.shape=NA) +
-  scale_y_log10(breaks=10^(1:5),labels=10^(1:5)%>%as.integer) +
-  coord_flip(ylim=c(10,.5*10^5)) +
+  scale_y_log10(breaks=10^c(0,3,6,9),labels=c("1","1k","1M","1B")) + #breaks=10^(1:5),labels=10^(1:5)%>%as.integer) +
+  coord_flip() + # ylim=c(10,.5*10^5)) +
   facet_wrap(~ano,ncol=2) +
-  labs(title="Distribuição do Empenho por Ano",
-       y = "Empenho Anual") +
+  labs(title="Distribuição do Valor Empenhado",
+       y = "Valor Empenhado Anual (R$)") +
   theme(legend.position = "none",
         axis.title.y=element_blank())
 ```

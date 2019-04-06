@@ -1,4 +1,4 @@
-Empenho: Série Histórica
+Análise do Valor Empenhado por Órgão, Anos 2014-2018
 ================
 
 Inclusão de pacotes
@@ -30,7 +30,8 @@ Cria tabela de referência p/ nomes de órgãos (usa o primeiro a aparecer)
 
 ``` r
 df_orgao_ref <- df_all %>%
-  rename(orgao_cod=`Órgão`,
+  rename(valor_empenhado=`Valor Empenhado`,
+         orgao_cod=`Órgão`,
          orgao=`Nome Órgão`) %>%
   mutate(orgao=orgao%>%as.character) %>% # era fatir
   group_by(orgao_cod) %>%
@@ -57,110 +58,100 @@ df_orgao_ref
     ## 10 13        " Agricultura e Pecuária"         
     ## # ... with 24 more rows
 
-Órgãos com maior empenho total (top 5)
+Órgãos com maior valor empenhado total (top 5)
 
 ``` r
 anos <- unique(df_all$ano%>%as.character)%>%as.integer
 
-df_all_top_orgaos_empenho <- df_all %>%
-  rename(orgao_cod=`Órgão`) %>%
+df_all_top_orgaos_valor_empenhado <- df_all %>%
+  rename(valor_empenhado=`Valor Empenhado`,
+         orgao_cod=`Órgão`) %>%
   group_by(orgao_cod) %>%
-  summarize(n=n(),total=sum(Empenho)) %>%
+  summarize(n=n(),
+            total=sum(valor_empenhado)) %>%
   arrange(desc(total)) %>%
   head(5) %>%
   inner_join(df_orgao_ref,by="orgao_cod") %>%
   select(orgao_cod,orgao_ref,everything()) %>%
-  mutate(media_anual=total/length(anos))
-df_all_top_orgaos_empenho
+  mutate(media_anual=total/length(anos)) %>%
+  mutate_at(vars(total,media_anual),~(./10^9)%>%as.integer) %>%
+  rename_at(vars(total,media_anual),~str_c(.,"_b")) # billions
+df_all_top_orgaos_valor_empenhado
 ```
 
     ## # A tibble: 5 x 5
-    ##   orgao_cod orgao_ref                      n      total media_anual
-    ##   <fct>     <chr>                      <int>      <dbl>       <dbl>
-    ## 1 18        " Educação"               155203 2208575029  441715006.
-    ## 2 29        " Saúde"                   77625  242259450   48451890 
-    ## 3 40        " Ciência e Tecnologia"    93202  161507216   32301443.
-    ## 4 37        Encargos Gerais do Estado  19223   72845941   14569188.
-    ## 5 26        " Segurança"               38427   39831177    7966235.
+    ##   orgao_cod orgao_ref                     n total_b media_anual_b
+    ##   <fct>     <chr>                     <int>   <int>         <int>
+    ## 1 37        Encargos Gerais do Estado 19223    4274           854
+    ## 2 20        " Fazenda"                13140    3940           788
+    ## 3 12        " Planejamento e Gestão"  12912    3917           783
+    ## 4 26        " Segurança"              38427    2569           513
+    ## 5 29        " Saúde"                  77625    1646           329
 
 Plota médias anuais
 
 ``` r
-df_all_top_orgaos_empenho%>%
+df_all_top_orgaos_valor_empenhado%>%
   mutate(orgao_ref=orgao_ref%>%fct_inorder()%>%fct_rev)%>%
-  ggplot(aes(orgao_ref,media_anual/10^6)) +
+  ggplot(aes(orgao_ref,media_anual_b)) +
   geom_col(aes(fill=orgao_ref)) +
   coord_flip() +
-  labs(title="Média de Empenhos Anuais por Órgão",
+  labs(title="Média de Valores Empenhados Anuais por Órgão",
        subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
-       y="Empenho Anual Médio (R$ milhões)") +
+       y="Valor Empenhado Anual Médio (R$ bilhões)") +
   theme(legend.position = "none",
         axis.title.y=element_blank())
 ```
 
 ![](empenho_anos_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
-Evolução história do empenho destes top órgãos:
+Evolução história dos Valores Empenhados destes top órgãos:
 
 ``` r
-df_all %>%
-  rename(orgao_cod=`Órgão`) %>%
-  inner_join(df_all_top_orgaos_empenho%>%
+df_hist <- df_all %>%
+  rename(valor_empenhado=`Valor Empenhado`,
+         orgao_cod=`Órgão`) %>%
+  inner_join(df_all_top_orgaos_valor_empenhado%>%
                select(orgao_cod,orgao=orgao_ref),
              by="orgao_cod") %>%
   group_by(ano,orgao) %>%
-  summarize(total=sum(Empenho)/10^6) %>%
-  arrange(desc(total)) %>%
-  mutate(orgao=orgao%>%fct_inorder) %>%
-  ggplot(aes(ano,total,group=orgao,color=orgao)) +
-  geom_line(size=I(1)) +
-  # scale_y_log10() +
-  labs(title="Empenho Anual por Órgão",
-       subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
-       y = "Empenho Total (R$ milhões)")
+  summarize(total_b=sum(valor_empenhado)/10^9) %>%
+  arrange(desc(total_b)) %>%
+  ungroup() %>% # para q proxima linha rode corretamente
+  mutate(orgao=orgao%>%fct_inorder) #
 ```
 
-![](empenho_anos_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
-
-Com log-scale:
+Grafa o histórico:
 
 ``` r
-df_all %>%
-  rename(orgao_cod=`Órgão`) %>%
-  inner_join(df_all_top_orgaos_empenho%>%
-               select(orgao_cod,orgao=orgao_ref),
-             by="orgao_cod") %>%
-  group_by(ano,orgao) %>%
-  summarize(total=sum(Empenho)/10^6) %>%
-  mutate(orgao=orgao%>%fct_reorder(total,sum)%>%fct_rev) %>%
-  ggplot(aes(ano,total,group=orgao,color=orgao)) +
+df_hist %>%
+  ggplot(aes(ano,total_b,group=orgao,color=orgao)) +
   geom_line(size=I(1)) +
-  scale_y_log10() +
-  labs(title="Empenho Anual por Órgão",
+  # scale_y_log10() +
+  labs(title="Valor Empenhado Anual por Órgão",
        subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
-       y = "Empenho Total (R$ milhões)") +
-  theme(legend.position = "bottom",
-        legend.title = element_blank())
+       y = "Valor Empenhado Total (R$ bilhões)")
 ```
 
 ![](empenho_anos_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
-Distribuição de empenho por ano (faceteamento)
+Distribuição de Valor Empenhado por ano (faceteamento)
 
 ``` r
 df_all %>%
-  rename(orgao_cod=`Órgão`) %>%
-  inner_join(df_all_top_orgaos_empenho%>%
+  rename(valor_empenhado=`Valor Empenhado`,
+         orgao_cod=`Órgão`) %>%
+  inner_join(df_all_top_orgaos_valor_empenhado%>%
                select(orgao_cod,orgao=orgao_ref),
              by="orgao_cod") %>%
-  mutate(orgao=orgao%>%fct_reorder(Empenho,sum)) %>%
-  ggplot(aes(orgao,Empenho)) +
+  mutate(orgao=orgao%>%fct_reorder(valor_empenhado,sum)) %>%
+  ggplot(aes(orgao,valor_empenhado+1)) +
   geom_boxplot(aes(fill=orgao),outlier.shape=NA) +
-  scale_y_log10(breaks=10^(1:5),labels=10^(1:5)%>%as.integer) +
-  coord_flip(ylim=c(10,.5*10^5)) +
+  scale_y_log10(breaks=10^c(0,3,6,9),labels=c("1","1k","1M","1B")) + #breaks=10^(1:5),labels=10^(1:5)%>%as.integer) +
+  coord_flip() + # ylim=c(10,.5*10^5)) +
   facet_wrap(~ano,ncol=2) +
-  labs(title="Distribuição do Empenho por Ano",
-       y = "Empenho Anual") +
+  labs(title="Distribuição do Valor Empenhado",
+       y = "Valor Empenhado Anual (R$)") +
   theme(legend.position = "none",
         axis.title.y=element_blank())
 ```
