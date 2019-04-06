@@ -1,5 +1,5 @@
 ---
-title: "Execução Orçamentária: Análise do Empenho"
+title: "Execução Orçamentária: Análise do Valor Empenhado por Órgão"
 output: github_document
 ---
 
@@ -13,7 +13,8 @@ library(fs)
 Checa tamanho dos arquivos
 
 ```{r}
-dir_info("data") %>% select(path,size,modification_time)
+dir_info("data") %>%
+  select(path,size,modification_time)
 ```
 
 # Leitura de Dados Higienizados
@@ -34,8 +35,8 @@ problems(df_orcamento)
 Quantas linhas, colunas, ou dimensões?
 
 ```{r}
-nrow(df_orcamento)
-ncol(df_orcamento)
+# nrow(df_orcamento)
+# ncol(df_orcamento)
 dim(df_orcamento)
 ```
 
@@ -51,22 +52,23 @@ summary(df_orcamento%>%select(contains("empenh"),
 Quantas linhas não preenchidas (com 'NA')?
 
 ```{r,cache=T}
-df_orcamento$Empenho %>% is.na %>% sum
+df_orcamento$`Valor Empenhado` %>% is.na %>% sum
 ```
 
-Plota histograma do Empenho
+Plota histograma do Valor Empenhado
 
 ```{r,cache=T}
-df_orcamento %>% ggplot(aes(Empenho)) +
-  geom_histogram(bins=30,fill="blue",color="black")
-```
-
-Aplica "log" no valor:
-
-```{r,cache=T}
-df_orcamento %>% ggplot(aes(Empenho)) +
+df_orcamento %>%
+  transmute(valor_empenhado=(1+`Valor Empenhado`))%>%
+  ggplot(aes(valor_empenhado)) +
   geom_histogram(bins=30,fill="blue",color="black") +
-  scale_x_log10()
+  scale_x_log10(breaks=10^(0:11),labels=c(1,10,100,
+                                          "1k","10k" ,"100k" ,
+                                          "1M","10M","100M",
+                                          "1B","10B","100B"))+
+  labs(title="Histograma de Valores Empenhados",
+       subtitle="Ano 2018",
+       x="Valor Empenhado (R$)")
 ```
 
 # Estudo por Órgãos
@@ -104,16 +106,18 @@ Empenho por órgão, harmonizando orgao_cod=40:
 
 ```{r}
 df_orcamento %>%
-  rename(orgao_cod=`Órgão`,
+  rename(valor_empenhado=`Valor Empenhado`,
+         orgao_cod=`Órgão`,
          orgao=`Nome Órgão`) %>%
   mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao)) %>%
   group_by(orgao) %>%
   summarize(n=n(),
-            total=sum(Empenho),
-            media=mean(Empenho),
-            mediana=median(Empenho),
-            desvio_padrao=sd(Empenho),
-            mad=mad(Empenho)) %>%
+            total=sum(valor_empenhado),
+            media=mean(valor_empenhado),
+            mediana=median(valor_empenhado),
+            desvio_padrao=sd(valor_empenhado),
+            mad=mad(valor_empenhado)) %>%
+  mutate_at(vars(-orgao,-n),~(./10^6)%>%as.integer) %>%
   arrange(-total)
 ```
 
@@ -128,21 +132,22 @@ Empenho total por órgão: Top 5
 
 ```{r}
 df_orcamento %>%
-  rename(orgao_cod=`Órgão`,
+  rename(valor_empenhado=`Valor Empenhado`,
+         orgao_cod=`Órgão`,
          orgao=`Nome Órgão`) %>%
   mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao),
          orgao=orgao%>%clean_orgao,
-         orgao=orgao%>%fct_reorder(-Empenho,sum)) %>%
+         orgao=orgao%>%fct_reorder(-valor_empenhado,sum)) %>%
   filter(as.integer(orgao)<6) %>%
   mutate(orgao=orgao%>%fct_rev) %>%
   group_by(orgao) %>%
-  summarize(total=sum(Empenho)/10^6) %>%
+  summarize(total=sum(valor_empenhado)/10^9) %>%
   ggplot(aes(orgao,total)) +
   geom_col(aes(fill=orgao)) +
   coord_flip() +
-  labs(title="Empenho Total por Órgão",
+  labs(title="Valor Empenhado Total por Órgão",
        subtitle="Ano 2018, Top 5",
-       y="Empenho Total (R$ milhões)") +
+       y="Valor Empenhado Total (R$ bilhões)") +
   theme(legend.position = "none",
         axis.title.y=element_blank())
 ```
@@ -151,20 +156,21 @@ Distribuição do Empenho por Órgão (boxbplot)
 
 ```{r}
 df_orcamento %>%
-  rename(orgao_cod=`Órgão`,
+  rename(valor_empenhado=`Valor Empenhado`,
+         orgao_cod=`Órgão`,
          orgao=`Nome Órgão`) %>%
   mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao),
          orgao=orgao%>%clean_orgao,
-         orgao=orgao%>%fct_reorder(-Empenho,median)) %>%
+         orgao=orgao%>%fct_reorder(valor_empenhado+1,.fun=median,.desc=T)) %>%
   filter(as.integer(orgao)<6) %>%
-  mutate(orgao=orgao%>%fct_rev) %>%
-  filter(Empenho>=10) %>% 
-  ggplot(aes(orgao,Empenho)) +
+  mutate(orgao=orgao%>%fct_rev) %>% # for coord_flip
+  ggplot(aes(orgao,valor_empenhado+1)) +
   geom_boxplot(aes(fill=orgao),notch=T) +
-  scale_y_log10() +
+  scale_y_log10(breaks=10^c(3,6,9),labels=c("1k","1M","1B"))+
   coord_flip() +
-  labs(title="Distribuição dos Empenhos por Órgão",
-       subtitle="Ano 2018, Top 5 medianas") +
+  labs(title="Distribuição dos Valores Empenhados por Órgão",
+       subtitle="Ano 2018, Top 5 medianas",
+       y="Valor Empenhado (R$)") +
   theme(legend.position = "none",
         axis.title.y=element_blank())
 ```

@@ -8,6 +8,7 @@ Inclusão de pacotes
 ```{r setup,message=F}
 library(tidyverse)
 library(fs)
+source("preparo_util.R")
 ```
 
 Lista diretório
@@ -53,13 +54,6 @@ primeiras_linhas
 ```
 
 Remover espaços. Referencia de [REGEXP](https://stringr.tidyverse.org/articles/regular-expressions.html)
-
-```{r}
-remove_espacos <- function(s) s %>% # 'pipe' do pacote "magrittr"
-  str_remove_all("\\s+(?=;)") %>%
-  str_remove_all("\\s+$") %>%
-  str_replace_all("\\s+"," ")
-```
 
 Remove espaços nas primeiras linhas
 
@@ -108,14 +102,6 @@ rm(lines_2018)
 rm(lines_2018_squished)
 ```
 
-Função para trocar a extensão de um nome de arquivo
-
-```{r}
-repl_ext <- function(s,new_ext) s %>%
-  str_replace_all("(?<=\\.).+$",new_ext)
-```
-
-
 Zipa o resultado
 
 ```{r,cache=T}
@@ -134,3 +120,9 @@ Checa tamanho dos arquivos
 ```{r}
 dir_info("data") %>% select(path,size,modification_time)
 ```
+
+```{r}
+file_delete(fname_2018)
+file_delete(fname_2018_squished)
+```
+
