@@ -142,15 +142,26 @@ df_valores %>%
 Empenhado vs Pago das top funções:
 
 ```{r,cache=T,message=F}
+df_valores_ggf <- df_valores%>%
+  filter(tipo=="empenhado",ano==2017) %>%
+  group_by(ano,func,tipo)%>%
+  summarize(valor=last(valor))
+
 df_valores %>%
   mutate(func_tipo=func%>%str_c("_",tipo)) %>%
-  ggplot(aes(ano,valor,group=func_tipo,color=func,linetype=tipo)) +
+  ggplot(aes(ano,valor,
+             group=func_tipo,
+             color=func,linetype=tipo)) +
   geom_line(size=I(1.2)) +
   # to do: ggforce
-  #geom_mark_circle(aes(filter = tipo=="empenhado",
-  #                      label = func, 
-  #                      description = "xxx",expand=.01,
-  #                     radius=.01)) +
+  # geom_mark_ellipse(aes(fill = Species, label = Species)) +
+  #geom_mark_circle(aes(ano,valor,
+  #                     label=func,
+  #                     fill=func),
+  #                 data=df_valores_ggf,
+  #                 expand=.002,
+  #                 label.fontsize=8,
+  #                inherit.aes=F)+
   #scale_y_log10() +
   labs(title="Valor Anual por Função",
        subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
