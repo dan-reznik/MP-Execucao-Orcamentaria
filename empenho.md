@@ -18,7 +18,7 @@ dir_info("data") %>%
 #>   <fs::path>                    <fs::bytes> <dttm>             
 #> 1 data/despesa.zip                  125.32M 2019-03-29 07:40:36
 #> 2 data/despesa2018.zip               17.98M 2019-03-29 16:40:21
-#> 3 data/despesa2018_squished.zip       9.08M 2019-04-06 10:25:50
+#> 3 data/despesa2018_squished.zip       9.08M 2019-04-06 12:14:07
 #> 4 data/df_all.rds                    24.37M 2019-03-30 12:05:39
 ```
 
@@ -127,174 +127,156 @@ df_orcamento$`Valor Empenhado` %>% is.na %>% sum
 #> [1] 0
 ```
 
-Plota histograma do Valor Empenhado
+Renomeia colunas a serem utilizadas
 
 ``` r
-df_orcamento %>%
-  transmute(valor_empenhado=(1+`Valor Empenhado`))%>%
-  ggplot(aes(valor_empenhado)) +
-  geom_histogram(bins=30,fill="blue",color="black") +
-  scale_x_log10(breaks=10^(0:11),labels=c(1,10,100,
+df_orcamento_clean <- df_orcamento %>%
+  rename(func_cod=`Função`,
+         func=`Nome Função`,
+         empenhado=`Valor Empenhado`,
+         liquidado=`Valor Liquidado`,
+         pago=`Valor Pago`)
+```
+
+Plota histograma dos Valores Empenhados, Liquisdados e Pagos:
+
+``` r
+df_orcamento_clean %>%
+  transmute_at(vars(empenhado,liquidado,pago),~.+1) %>% # for log
+  mutate(row=row_number()) %>%
+  gather("key","value",-row) %>%
+  mutate(key=factor(key,levels=c("empenhado","liquidado","pago"))) %>%
+  ggplot(aes(key,value,fill=key)) +
+  geom_violin(draw_quantiles = c(.5)) +
+  scale_y_log10(breaks=10^(0:11),labels=c(1,10,100,
                                           "1k","10k" ,"100k" ,
                                           "1M","10M","100M",
                                           "1B","10B","100B"))+
-  labs(title="Histograma de Valores Empenhados",
+  labs(title="Histograma de Valores",
        subtitle="Ano 2018",
-       x="Valor Empenhado (R$)")
+       x="Valor (R$)") +
+  theme(legend.position = "none")
 ```
 
-![](empenho_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](empenho_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-# Estudo por Órgãos
+# Estudo por Função
 
-Quantos por órgão?
+Nomes das funções são únicas por código?
 
 ``` r
-df_orcamento %>%
-  rename(orgao_cod=`Órgão`,
-         orgao=`Nome Órgão`) %>%
-  count(orgao_cod,orgao,sort=T)
-#> # A tibble: 27 x 3
-#>    orgao_cod orgao                                             n
-#>    <chr>     <chr>                                         <int>
-#>  1 18        Secretaria de Estado de Educação              19940
-#>  2 40        Secretaria de Estado de Ciência Tecnologia    12816
-#>  3 29        Secretaria de Estado de Saúde                 11056
-#>  4 21        Secretaria de Estado da Casa Civil e Desenvol 10603
-#>  5 26        Secretaria de Estado de Segurança              5542
-#>  6 13        Secretaria de Estado de Agricultura Pecuária   4800
-#>  7 07        Secretaria de Estado de Obras                  4671
-#>  8 20        Secretaria de Estado de Fazenda e Planejament  4192
-#>  9 31        Secretaria de Estado de Transportes            3436
-#> 10 10        Ministério Público                             2629
-#> # ... with 17 more rows
+df_orcamento_clean %>%
+  count(func_cod,func) %>%
+  count(func_cod) %>%
+  count(nn)
+#> # A tibble: 1 x 2
+#>      nn     n
+#>   <int> <int>
+#> 1     1    25
 ```
 
-Nomes de órgãos são únicos por código? Parece que há um problema no
-código 40
+Quantos por Função?
 
 ``` r
-df_orcamento %>%
-  rename(orgao_cod=`Órgão`,
-         orgao=`Nome Órgão`) %>%
-  count(orgao_cod,orgao) %>%
-  count(orgao_cod,sort=T)
-#> # A tibble: 26 x 2
-#>    orgao_cod    nn
-#>    <chr>     <int>
-#>  1 40            2
-#>  2 01            1
-#>  3 02            1
-#>  4 03            1
-#>  5 07            1
-#>  6 08            1
-#>  7 09            1
-#>  8 10            1
-#>  9 11            1
-#> 10 13            1
-#> # ... with 16 more rows
+df_orcamento_clean %>%
+  count(func_cod,func,sort=T)
+#> # A tibble: 25 x 3
+#>    func_cod func                    n
+#>    <chr>    <chr>               <int>
+#>  1 12       Educação            30588
+#>  2 06       Segurança Pública   12812
+#>  3 10       Saúde               11441
+#>  4 26       Transporte           5684
+#>  5 03       Essencial à Justiça  5428
+#>  6 20       Agricultura          4932
+#>  7 04       Administração        4479
+#>  8 08       Assistência Social   2722
+#>  9 02       Judiciária           2436
+#> 10 23       Comércio e Serviços  2410
+#> # ... with 15 more rows
 ```
 
-Quem é número 40 e em quais formas aparece?
+Valores por função:
 
 ``` r
-df_orcamento %>%
-  rename(orgao_cod=`Órgão`,
-         orgao=`Nome Órgão`) %>%
-  count(orgao_cod,orgao) %>%
-  filter(orgao_cod==40)
-#> # A tibble: 2 x 3
-#>   orgao_cod orgao                                            n
-#>   <chr>     <chr>                                        <int>
-#> 1 40        Secretaria de Estado de Ciência Tecnologia   12816
-#> 2 40        Secretaria de Estado de Ciência Tecnologia I  1062
+df_orcamento_clean %>%
+  group_by(func) %>% {
+    ns <- summarize(.,n=n())
+    ss <- summarize_at(.,vars(empenhado,liquidado,pago),
+                 list(sum=~sum(.),
+                      mean=~mean(.),
+                      median=~median(.),
+                      sd=~sd(.),
+                      mad=~mad(.)))
+    ns %>% inner_join(ss,by="func")
+    } %>%
+  mutate_at(vars(-func),~(./10^3)%>%as.integer) %>%
+  arrange(-n)
+#> # A tibble: 25 x 17
+#>    func      n empenhado_sum liquidado_sum pago_sum empenhado_mean
+#>    <chr> <int>         <int>         <int>    <int>          <int>
+#>  1 Educ~    30     401164009     378952112   3.23e8          13115
+#>  2 Segu~    12     665571698     655641842   5.33e8          51949
+#>  3 Saúde    11     230771890     199187734   1.46e8          20170
+#>  4 Esse~     5      88609648     166434811   1.62e8          16324
+#>  5 Tran~     5      91109975      58852547   5.62e7          16029
+#>  6 Admi~     4     157196580     153486935   1.50e8          35096
+#>  7 Agri~     4      24201227      25465374   1.49e7           4906
+#>  8 Assi~     2      21152202      11160642   1.48e7           7770
+#>  9 Comé~     2       9032679      16080292   1.35e7           3747
+#> 10 Gest~     2      14260404      13784206   1.09e7           6125
+#> # ... with 15 more rows, and 11 more variables: liquidado_mean <int>,
+#> #   pago_mean <int>, empenhado_median <int>, liquidado_median <int>,
+#> #   pago_median <int>, empenhado_sd <int>, liquidado_sd <int>,
+#> #   pago_sd <int>, empenhado_mad <int>, liquidado_mad <int>,
+#> #   pago_mad <int>
 ```
 
-Empenho por órgão, harmonizando orgao\_cod=40:
+Empenhos por função: Top 5
 
 ``` r
-df_orcamento %>%
-  rename(valor_empenhado=`Valor Empenhado`,
-         orgao_cod=`Órgão`,
-         orgao=`Nome Órgão`) %>%
-  mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao)) %>%
-  group_by(orgao) %>%
-  summarize(n=n(),
-            total=sum(valor_empenhado),
-            media=mean(valor_empenhado),
-            mediana=median(valor_empenhado),
-            desvio_padrao=sd(valor_empenhado),
-            mad=mad(valor_empenhado)) %>%
-  mutate_at(vars(-orgao,-n),~(./10^6)%>%as.integer) %>%
-  arrange(-total)
-#> # A tibble: 26 x 7
-#>    orgao                         n  total media mediana desvio_padrao   mad
-#>    <chr>                     <int>  <int> <int>   <int>         <int> <int>
-#>  1 Secretaria de Estado de ~  4192 1.49e6   355       0          4574     0
-#>  2 Secretaria de Estado de ~  5542 4.38e5    79       0          1543     0
-#>  3 Encargos Gerais do Estado  2082 2.99e5   143       0          1776     0
-#>  4 Tribunal de Justiça do E~  2436 2.55e5   104       0          1718     0
-#>  5 Secretaria de Estado de ~ 19940 2.50e5    12       0           204     0
-#>  6 Secretaria de Estado de ~ 11056 2.29e5    20       0           274     0
-#>  7 Secretaria de Estado de ~ 13878 1.78e5    12       0           254     0
-#>  8 Secretaria de Estado de ~  1649 1.01e5    61       0           312     0
-#>  9 Secretaria de Estado da ~ 10603 9.26e4     8       0           126     0
-#> 10 Secretaria de Estado de ~  3436 7.64e4    22       0           706     0
-#> # ... with 16 more rows
-```
-
-Remove prefixos de nomes de órgãos
-
-``` r
-clean_orgao <- function(orgao) orgao %>%
-  str_remove("^Secretaria d[aeo] Estado d[aeo] ")
-```
-
-Empenho total por órgão: Top 5
-
-``` r
-df_orcamento %>%
-  rename(valor_empenhado=`Valor Empenhado`,
-         orgao_cod=`Órgão`,
-         orgao=`Nome Órgão`) %>%
-  mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao),
-         orgao=orgao%>%clean_orgao,
-         orgao=orgao%>%fct_reorder(-valor_empenhado,sum)) %>%
-  filter(as.integer(orgao)<6) %>%
-  mutate(orgao=orgao%>%fct_rev) %>%
-  group_by(orgao) %>%
-  summarize(total=sum(valor_empenhado)/10^9) %>%
-  ggplot(aes(orgao,total)) +
-  geom_col(aes(fill=orgao)) +
+df_orcamento_clean %>%
+  mutate(func=func%>%fct_reorder(-empenhado,sum)) %>%
+  filter(as.integer(func)<6) %>%
+  mutate(func=func%>%fct_rev) %>% # for coord_flip
+  group_by(func) %>%
+  # milhoes
+  summarize_at(vars(empenhado,liquidado,pago),
+               list(~(sum(.)/10^9)%>%round(0))) %>%
+  gather("key","value",-func) %>%
+  mutate(key=factor(key,levels=c("pago","liquidado","empenhado"))) %>%
+  ggplot(aes(func,value,group=key,fill=key)) +
+  geom_col(position="dodge") +
   coord_flip() +
-  labs(title="Valor Empenhado Total por Órgão",
+  labs(title="Valores Totais por Função",
        subtitle="Ano 2018, Top 5",
-       y="Valor Empenhado Total (R$ bilhões)") +
-  theme(legend.position = "none",
+       y="Valor (R$ bilhões)") +
+  theme(legend.position = "top",
+        legend.title = element_blank(),
         axis.title.y=element_blank())
 ```
 
-![](empenho_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](empenho_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+``` r
+ggsave("pics/valores_por_funcao.png")
+#> Saving 7 x 5 in image
+```
 
 Distribuição do Empenho por Órgão (boxbplot)
 
 ``` r
-df_orcamento %>%
-  rename(valor_empenhado=`Valor Empenhado`,
-         orgao_cod=`Órgão`,
-         orgao=`Nome Órgão`) %>%
-  mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao),
-         orgao=orgao%>%clean_orgao,
-         orgao=orgao%>%fct_reorder(valor_empenhado+1,.fun=median,.desc=T)) %>%
-  filter(as.integer(orgao)<6) %>%
-  mutate(orgao=orgao%>%fct_rev) %>% # for coord_flip
-  ggplot(aes(orgao,valor_empenhado+1)) +
-  geom_boxplot(aes(fill=orgao),notch=T) +
-  scale_y_log10(breaks=10^c(3,6,9),labels=c("1k","1M","1B"))+
+df_orcamento_clean %>%
+  mutate(func=func%>%fct_reorder(empenhado+1,.fun=median,.desc=T)) %>%
+  filter(as.integer(func)<6) %>%
+  mutate(func=func%>%fct_rev) %>% # for coord_flip
+  ggplot(aes(func,empenhado+1)) +
+  geom_boxplot(aes(fill=func),notch=T) +
+  scale_y_log10(breaks=10^c(0,3,6,9),labels=c("1","1k","1M","1B"))+
   coord_flip() +
-  labs(title="Distribuição dos Valores Empenhados por Órgão",
+  labs(title="Distribuição dos Valores por Função",
        subtitle="Ano 2018, Top 5 medianas",
-       y="Valor Empenhado (R$)") +
+       y="Valor (R$)") +
   theme(legend.position = "none",
         axis.title.y=element_blank())
 ```

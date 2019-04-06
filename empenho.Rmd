@@ -63,122 +63,117 @@ Quantas linhas não preenchidas (com 'NA')?
 df_orcamento$`Valor Empenhado` %>% is.na %>% sum
 ```
 
-Plota histograma do Valor Empenhado
+Renomeia colunas a serem utilizadas
+
+```{r}
+df_orcamento_clean <- df_orcamento %>%
+  rename(func_cod=`Função`,
+         func=`Nome Função`,
+         empenhado=`Valor Empenhado`,
+         liquidado=`Valor Liquidado`,
+         pago=`Valor Pago`)
+```
+
+Plota histograma dos Valores Empenhados, Liquisdados e Pagos:
 
 ```{r,cache=T}
-df_orcamento %>%
-  transmute(valor_empenhado=(1+`Valor Empenhado`))%>%
-  ggplot(aes(valor_empenhado)) +
-  geom_histogram(bins=30,fill="blue",color="black") +
-  scale_x_log10(breaks=10^(0:11),labels=c(1,10,100,
+df_orcamento_clean %>%
+  transmute_at(vars(empenhado,liquidado,pago),~.+1) %>% # for log
+  mutate(row=row_number()) %>%
+  gather("key","value",-row) %>%
+  mutate(key=factor(key,levels=c("empenhado","liquidado","pago"))) %>%
+  ggplot(aes(key,value,fill=key)) +
+  geom_violin(draw_quantiles = c(.5)) +
+  scale_y_log10(breaks=10^(0:11),labels=c(1,10,100,
                                           "1k","10k" ,"100k" ,
                                           "1M","10M","100M",
                                           "1B","10B","100B"))+
-  labs(title="Histograma de Valores Empenhados",
+  labs(title="Histograma de Valores",
        subtitle="Ano 2018",
-       x="Valor Empenhado (R$)")
+       x="Valor (R$)") +
+  theme(legend.position = "none")
 ```
 
-# Estudo por Órgãos
+# Estudo por Função
 
-Quantos por órgão?
+Nomes das funções são únicas por código?
 
 ```{r,cache=T}
-df_orcamento %>%
-  rename(orgao_cod=`Órgão`,
-         orgao=`Nome Órgão`) %>%
-  count(orgao_cod,orgao,sort=T)
+df_orcamento_clean %>%
+  count(func_cod,func) %>%
+  count(func_cod) %>%
+  count(nn)
 ```
 
-Nomes de órgãos são únicos por código? Parece que há um problema no código 40
+Quantos por Função?
 
 ```{r,cache=T}
-df_orcamento %>%
-  rename(orgao_cod=`Órgão`,
-         orgao=`Nome Órgão`) %>%
-  count(orgao_cod,orgao) %>%
-  count(orgao_cod,sort=T)
+df_orcamento_clean %>%
+  count(func_cod,func,sort=T)
 ```
 
-Quem é número 40 e em quais formas aparece?
+
+Valores por função:
 
 ```{r}
-df_orcamento %>%
-  rename(orgao_cod=`Órgão`,
-         orgao=`Nome Órgão`) %>%
-  count(orgao_cod,orgao) %>%
-  filter(orgao_cod==40)
+df_orcamento_clean %>%
+  group_by(func) %>% {
+    ns <- summarize(.,n=n())
+    ss <- summarize_at(.,vars(empenhado,liquidado,pago),
+                 list(sum=~sum(.),
+                      mean=~mean(.),
+                      median=~median(.),
+                      sd=~sd(.),
+                      mad=~mad(.)))
+    ns %>% inner_join(ss,by="func")
+    } %>%
+  mutate_at(vars(-func),~(./10^3)%>%as.integer) %>%
+  arrange(-n)
 ```
 
-Empenho por órgão, harmonizando orgao_cod=40:
+Empenhos por função: Top 5
 
 ```{r}
-df_orcamento %>%
-  rename(valor_empenhado=`Valor Empenhado`,
-         orgao_cod=`Órgão`,
-         orgao=`Nome Órgão`) %>%
-  mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao)) %>%
-  group_by(orgao) %>%
-  summarize(n=n(),
-            total=sum(valor_empenhado),
-            media=mean(valor_empenhado),
-            mediana=median(valor_empenhado),
-            desvio_padrao=sd(valor_empenhado),
-            mad=mad(valor_empenhado)) %>%
-  mutate_at(vars(-orgao,-n),~(./10^6)%>%as.integer) %>%
-  arrange(-total)
-```
-
-Remove prefixos de nomes de órgãos
-
-```{r}
-clean_orgao <- function(orgao) orgao %>%
-  str_remove("^Secretaria d[aeo] Estado d[aeo] ")
-```
-
-Empenho total por órgão: Top 5
-
-```{r}
-df_orcamento %>%
-  rename(valor_empenhado=`Valor Empenhado`,
-         orgao_cod=`Órgão`,
-         orgao=`Nome Órgão`) %>%
-  mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao),
-         orgao=orgao%>%clean_orgao,
-         orgao=orgao%>%fct_reorder(-valor_empenhado,sum)) %>%
-  filter(as.integer(orgao)<6) %>%
-  mutate(orgao=orgao%>%fct_rev) %>%
-  group_by(orgao) %>%
-  summarize(total=sum(valor_empenhado)/10^9) %>%
-  ggplot(aes(orgao,total)) +
-  geom_col(aes(fill=orgao)) +
+df_orcamento_clean %>%
+  mutate(func=func%>%fct_reorder(-empenhado,sum)) %>%
+  filter(as.integer(func)<6) %>%
+  mutate(func=func%>%fct_rev) %>% # for coord_flip
+  group_by(func) %>%
+  # milhoes
+  summarize_at(vars(empenhado,liquidado,pago),
+               list(~(sum(.)/10^9)%>%round(0))) %>%
+  gather("key","value",-func) %>%
+  mutate(key=factor(key,levels=c("pago","liquidado","empenhado"))) %>%
+  ggplot(aes(func,value,group=key,fill=key)) +
+  geom_col(position="dodge") +
   coord_flip() +
-  labs(title="Valor Empenhado Total por Órgão",
+  labs(title="Valores Totais por Função",
        subtitle="Ano 2018, Top 5",
-       y="Valor Empenhado Total (R$ bilhões)") +
-  theme(legend.position = "none",
+       y="Valor (R$ bilhões)") +
+  theme(legend.position = "top",
+        legend.title = element_blank(),
         axis.title.y=element_blank())
 ```
+
+```{r}
+ggsave("pics/valores_por_funcao.png")
+```
+
 
 Distribuição do Empenho por Órgão (boxbplot)
 
 ```{r}
-df_orcamento %>%
-  rename(valor_empenhado=`Valor Empenhado`,
-         orgao_cod=`Órgão`,
-         orgao=`Nome Órgão`) %>%
-  mutate(orgao=if_else(orgao_cod==40,"Secretaria de Estado de Ciência Tecnologia",orgao),
-         orgao=orgao%>%clean_orgao,
-         orgao=orgao%>%fct_reorder(valor_empenhado+1,.fun=median,.desc=T)) %>%
-  filter(as.integer(orgao)<6) %>%
-  mutate(orgao=orgao%>%fct_rev) %>% # for coord_flip
-  ggplot(aes(orgao,valor_empenhado+1)) +
-  geom_boxplot(aes(fill=orgao),notch=T) +
-  scale_y_log10(breaks=10^c(3,6,9),labels=c("1k","1M","1B"))+
+df_orcamento_clean %>%
+  mutate(func=func%>%fct_reorder(empenhado+1,.fun=median,.desc=T)) %>%
+  filter(as.integer(func)<6) %>%
+  mutate(func=func%>%fct_rev) %>% # for coord_flip
+  ggplot(aes(func,empenhado+1)) +
+  geom_boxplot(aes(fill=func),notch=T) +
+  scale_y_log10(breaks=10^c(0,3,6,9),labels=c("1","1k","1M","1B"))+
   coord_flip() +
-  labs(title="Distribuição dos Valores Empenhados por Órgão",
+  labs(title="Distribuição dos Valores por Função",
        subtitle="Ano 2018, Top 5 medianas",
-       y="Valor Empenhado (R$)") +
+       y="Valor (R$)") +
   theme(legend.position = "none",
         axis.title.y=element_blank())
 ```
