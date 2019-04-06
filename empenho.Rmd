@@ -141,7 +141,7 @@ df_orcamento_clean %>%
   group_by(func) %>%
   # milhoes
   summarize_at(vars(empenhado,liquidado,pago),
-               list(~(sum(.)/10^9)%>%round(0))) %>%
+               list(~(sum(.)/10^9))) %>%
   gather("key","value",-func) %>%
   mutate(key=factor(key,levels=c("pago","liquidado","empenhado"))) %>%
   ggplot(aes(func,value,group=key,fill=key)) +
