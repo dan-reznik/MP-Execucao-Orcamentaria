@@ -86,35 +86,82 @@ df_top_funcs_empenhado %>%
 
 ![](empenho_anos_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-Evolução história dos Valores Empenhados destes top funçãos:
-
 ``` r
-df_hist <- df_all_clean %>%
-  semi_join(df_top_funcs_empenhado,by="func_cod") %>%
+df_all_clean %>%
+  mutate(func=func%>%fct_reorder(-empenhado,sum)) %>%
+  filter(as.integer(func)<6) %>%
+  mutate(func=func%>%fct_drop%>%fct_rev) %>% # for coord_flip
   group_by(ano,func) %>%
-  summarize(total_b=sum(empenhado)/10^9) %>%
-  arrange(desc(total_b)) %>%
-  ungroup() %>% # para q proxima linha rode corretamente
-  mutate(func=func%>%fct_drop%>%fct_inorder) #
-#> Warning: Column `func_cod` joining factors with different levels, coercing
-#> to character vector
+  # milhoes
+  summarize_at(vars(empenhado,liquidado,pago),
+               list(~(sum(.)/10^9))) %>%
+  gather("key","value",-func,-ano) %>%
+  mutate(key=factor(key,levels=c("pago","liquidado","empenhado"))) %>%
+  ggplot(aes(func,value,group=key,fill=key)) +
+  geom_col(position="dodge") +
+  coord_flip() +
+  labs(title="Valores Totais por Função",
+       subtitle="Top 5 por empenho total 2014-8",
+       y="Valor (R$ bilhões)") +
+  theme(legend.position = "top",
+        legend.title = element_blank(),
+        axis.title.y=element_blank()) +
+  facet_wrap(~ano)
 ```
 
-Grafa o histórico:
+![](empenho_anos_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+Empenhado vs Pago das top funções:
 
 ``` r
-df_hist %>%
-  ggplot(aes(ano,total_b,group=func,color=func)) +
-  geom_line(size=I(1)) +
+df_valores <- df_all_clean %>%
+  # to avoid warning on factors
+  {suppressWarnings(semi_join(.,df_top_funcs_empenhado,by="func_cod"))}%>%
+  group_by(ano,func) %>%
+  summarize_at(vars(empenhado,liquidado,pago),list(sum=~sum(.)/10^9%>%round(1))) %>%
+  arrange(desc(empenhado_sum)) %>%
+  ungroup() %>% # para q proxima linha rode corretamente
+  mutate(func=func%>%fct_drop%>%fct_inorder) %>%
+  gather("tipo","valor",ends_with("_sum")) %>%
+  mutate_at(vars(tipo),~str_sub(.,end=-5)) %>% # remove "_sum" suffix
+  filter(tipo!="liquidado")
+
+df_valores %>%
+  ggplot(aes(ano,valor,group=func,color=func)) +
+  geom_line(size=I(1.2)) +
   # scale_y_log10() +
-  labs(title="Valor Empenhado Anual por Função",
+  labs(title="Valor Anual por Função",
        subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
-       y = "Valor Empenhado Total (R$ bilhões)") +
-  theme(legend.position = "bottom",
-        legend.title=element_blank())
+       y = "Valor Total (R$ bilhões)") +
+  theme(legend.position = "top",
+        legend.title=element_blank()) +
+  facet_wrap(~tipo)
 ```
 
-![](empenho_anos_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](empenho_anos_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+Empenhado vs Pago das top funções:
+
+``` r
+df_valores %>%
+  mutate(func_tipo=func%>%str_c("_",tipo)) %>%
+  ggplot(aes(ano,valor,group=func_tipo,color=func,linetype=tipo)) +
+  geom_line(size=I(1.2)) +
+  # scale_y_log10() +
+  labs(title="Valor Anual por Função",
+       subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
+       y = "Valor Total (R$ bilhões)") +
+  theme_minimal() +
+    theme(legend.position = "bottom",
+          legend.title=element_blank())
+```
+
+![](empenho_anos_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+``` r
+ggsave("pics/empenhado vs pago.png",width=11)
+#> Saving 11 x 5 in image
+```
 
 Distribuição de Valor Empenhado por ano (faceteamento)
 
@@ -135,4 +182,4 @@ df_all_clean %>%
 #> to character vector
 ```
 
-![](empenho_anos_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](empenho_anos_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->

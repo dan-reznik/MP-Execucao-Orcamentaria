@@ -157,7 +157,6 @@ df_valores %>%
 ggsave("pics/empenhado vs pago.png",width=11)
 ```
 
-
 Distribuição de Valor Empenhado por ano (faceteamento)
 
 ```{r,cache=T,message=F}
