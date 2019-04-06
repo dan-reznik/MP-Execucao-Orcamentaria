@@ -101,7 +101,7 @@ Nomes das funções são únicas por código?
 ```{r,cache=T}
 df_orcamento_clean %>%
   count(func_cod,func) %>%
-  count(func_cod) %>%
+  count(func_cod,name="nn") %>%
   count(nn)
 ```
 

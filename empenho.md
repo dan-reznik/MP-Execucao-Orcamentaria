@@ -5,7 +5,16 @@ Inclusão de pacotes
 
 ``` r
 library(tidyverse)
+#> Warning: package 'tidyverse' was built under R version 3.5.3
+#> Warning: package 'tibble' was built under R version 3.5.3
+#> Warning: package 'tidyr' was built under R version 3.5.3
+#> Warning: package 'readr' was built under R version 3.5.3
+#> Warning: package 'purrr' was built under R version 3.5.3
+#> Warning: package 'dplyr' was built under R version 3.5.3
+#> Warning: package 'stringr' was built under R version 3.5.3
+#> Warning: package 'forcats' was built under R version 3.5.3
 library(fs)
+#> Warning: package 'fs' was built under R version 3.5.3
 ```
 
 Checa tamanho dos arquivos
@@ -84,8 +93,8 @@ glimpse(df_orcamento)
 
 ``` r
 problems(df_orcamento)
-#> # tibble [0 x 4]
-#> # ... with 4 variables: row <int>, col <int>, expected <chr>, actual <chr>
+#> [1] row      col      expected actual  
+#> <0 rows> (or 0-length row.names)
 ```
 
 Quantas linhas, colunas, ou dimensões?
@@ -167,7 +176,7 @@ Nomes das funções são únicas por código?
 ``` r
 df_orcamento_clean %>%
   count(func_cod,func) %>%
-  count(func_cod) %>%
+  count(func_cod,name="nn") %>%
   count(nn)
 #> # A tibble: 1 x 2
 #>      nn     n

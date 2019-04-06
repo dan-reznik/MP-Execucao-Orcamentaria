@@ -5,6 +5,18 @@ Inclusão de pacotes
 
 ``` r
 library(tidyverse)
+#> Warning: package 'tidyverse' was built under R version 3.5.3
+#> Warning: package 'tibble' was built under R version 3.5.3
+#> Warning: package 'tidyr' was built under R version 3.5.3
+#> Warning: package 'readr' was built under R version 3.5.3
+#> Warning: package 'purrr' was built under R version 3.5.3
+#> Warning: package 'dplyr' was built under R version 3.5.3
+#> Warning: package 'stringr' was built under R version 3.5.3
+#> Warning: package 'forcats' was built under R version 3.5.3
+library(ggthemes)
+#> Warning: package 'ggthemes' was built under R version 3.5.3
+library(ggforce)
+#> Warning: package 'ggforce' was built under R version 3.5.3
 ```
 
 Lê do arquivo “.rds” preparado em `preparo_anos.Rmd`
@@ -33,7 +45,7 @@ Nomes das funções são únicas por código?
 ``` r
 df_all_clean %>%
   count(func_cod,func) %>%
-  count(func_cod) %>%
+  count(func_cod,name="nn") %>%
   count(nn)
 #> # A tibble: 1 x 2
 #>      nn     n
@@ -147,7 +159,12 @@ df_valores %>%
   mutate(func_tipo=func%>%str_c("_",tipo)) %>%
   ggplot(aes(ano,valor,group=func_tipo,color=func,linetype=tipo)) +
   geom_line(size=I(1.2)) +
-  # scale_y_log10() +
+  # to do: ggforce
+  #geom_mark_circle(aes(filter = tipo=="empenhado",
+  #                      label = func, 
+  #                      description = "xxx",expand=.01,
+  #                     radius=.01)) +
+  #scale_y_log10() +
   labs(title="Valor Anual por Função",
        subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
        y = "Valor Total (R$ bilhões)") +
@@ -162,6 +179,10 @@ df_valores %>%
 ggsave("pics/empenhado vs pago.png",width=11)
 #> Saving 11 x 5 in image
 ```
+
+### TO DO: use ggforce::geom\_mark
+
+<https://www.data-imaginist.com/2019/the-ggforce-awakens-again/>
 
 Distribuição de Valor Empenhado por ano (faceteamento)
 

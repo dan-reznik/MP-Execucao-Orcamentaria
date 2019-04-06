@@ -15,6 +15,8 @@ Inclusão de pacotes
 
 ```{r setup,message=F}
 library(tidyverse)
+library(ggthemes)
+library(ggforce)
 ```
 
 Lê do arquivo ".rds" preparado em `preparo_anos.Rmd`
@@ -43,7 +45,7 @@ Nomes das funções são únicas por código?
 ```{r,cache=T}
 df_all_clean %>%
   count(func_cod,func) %>%
-  count(func_cod) %>%
+  count(func_cod,name="nn") %>%
   count(nn)
 ```
 
@@ -144,7 +146,12 @@ df_valores %>%
   mutate(func_tipo=func%>%str_c("_",tipo)) %>%
   ggplot(aes(ano,valor,group=func_tipo,color=func,linetype=tipo)) +
   geom_line(size=I(1.2)) +
-  # scale_y_log10() +
+  # to do: ggforce
+  #geom_mark_circle(aes(filter = tipo=="empenhado",
+  #                      label = func, 
+  #                      description = "xxx",expand=.01,
+  #                     radius=.01)) +
+  #scale_y_log10() +
   labs(title="Valor Anual por Função",
        subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
        y = "Valor Total (R$ bilhões)") +
@@ -156,6 +163,9 @@ df_valores %>%
 ```{r}
 ggsave("pics/empenhado vs pago.png",width=11)
 ```
+
+### TO DO: use ggforce::geom_mark
+https://www.data-imaginist.com/2019/the-ggforce-awakens-again/
 
 Distribuição de Valor Empenhado por ano (faceteamento)
 
