@@ -1,4 +1,4 @@
-Análise do Valor Empenhado por Órgão, Anos 2014-2018
+Empenho: Análise dos Dados, 2014-8
 ================
 
 Inclusão de pacotes
@@ -12,9 +12,8 @@ Lê do arquivo “.rds” preparado em `preparo_anos.Rmd`
 ``` r
 df_all <- read_rds("data/df_all.rds")
 nrow(df_all)
+#> [1] 705527
 ```
-
-    ## [1] 705527
 
 Limpa nome de orgao de maneira mais genérica
 
@@ -41,22 +40,21 @@ df_orgao_ref <- df_all %>%
   mutate(orgao_ref=orgao_ref%>%clean_orgao_gen) %>%
   arrange(orgao_cod)
 df_orgao_ref
+#> # A tibble: 34 x 2
+#>    orgao_cod orgao_ref                         
+#>    <fct>     <chr>                             
+#>  1 01        Assembléia Legislativa            
+#>  2 02        Tribunal de Contas do Estado do RJ
+#>  3 03        Tribunal de Justiça               
+#>  4 07        " Obras"                          
+#>  5 08        ViceGovernadoria                  
+#>  6 09        Procuradoria Geral do Estado      
+#>  7 10        Ministério Público                
+#>  8 11        Defensoria Pública Geral do Estado
+#>  9 12        " Planejamento e Gestão"          
+#> 10 13        " Agricultura e Pecuária"         
+#> # ... with 24 more rows
 ```
-
-    ## # A tibble: 34 x 2
-    ##    orgao_cod orgao_ref                         
-    ##    <fct>     <chr>                             
-    ##  1 01        Assembléia Legislativa            
-    ##  2 02        Tribunal de Contas do Estado do RJ
-    ##  3 03        Tribunal de Justiça               
-    ##  4 07        " Obras"                          
-    ##  5 08        ViceGovernadoria                  
-    ##  6 09        Procuradoria Geral do Estado      
-    ##  7 10        Ministério Público                
-    ##  8 11        Defensoria Pública Geral do Estado
-    ##  9 12        " Planejamento e Gestão"          
-    ## 10 13        " Agricultura e Pecuária"         
-    ## # ... with 24 more rows
 
 Órgãos com maior valor empenhado total (top 5)
 
@@ -77,16 +75,15 @@ df_all_top_orgaos_valor_empenhado <- df_all %>%
   mutate_at(vars(total,media_anual),~(./10^9)%>%as.integer) %>%
   rename_at(vars(total,media_anual),~str_c(.,"_b")) # billions
 df_all_top_orgaos_valor_empenhado
+#> # A tibble: 5 x 5
+#>   orgao_cod orgao_ref                     n total_b media_anual_b
+#>   <fct>     <chr>                     <int>   <int>         <int>
+#> 1 37        Encargos Gerais do Estado 19223    4274           854
+#> 2 20        " Fazenda"                13140    3940           788
+#> 3 12        " Planejamento e Gestão"  12912    3917           783
+#> 4 26        " Segurança"              38427    2569           513
+#> 5 29        " Saúde"                  77625    1646           329
 ```
-
-    ## # A tibble: 5 x 5
-    ##   orgao_cod orgao_ref                     n total_b media_anual_b
-    ##   <fct>     <chr>                     <int>   <int>         <int>
-    ## 1 37        Encargos Gerais do Estado 19223    4274           854
-    ## 2 20        " Fazenda"                13140    3940           788
-    ## 3 12        " Planejamento e Gestão"  12912    3917           783
-    ## 4 26        " Segurança"              38427    2569           513
-    ## 5 29        " Saúde"                  77625    1646           329
 
 Plota médias anuais
 
@@ -103,7 +100,7 @@ df_all_top_orgaos_valor_empenhado%>%
         axis.title.y=element_blank())
 ```
 
-![](empenho_anos_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](empenho_anos_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 Evolução história dos Valores Empenhados destes top órgãos:
 
@@ -130,10 +127,11 @@ df_hist %>%
   # scale_y_log10() +
   labs(title="Valor Empenhado Anual por Órgão",
        subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
-       y = "Valor Empenhado Total (R$ bilhões)")
+       y = "Valor Empenhado Total (R$ bilhões)") +
+  theme(legend.position = "bottom")
 ```
 
-![](empenho_anos_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](empenho_anos_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 Distribuição de Valor Empenhado por ano (faceteamento)
 
@@ -156,4 +154,4 @@ df_all %>%
         axis.title.y=element_blank())
 ```
 
-![](empenho_anos_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](empenho_anos_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->

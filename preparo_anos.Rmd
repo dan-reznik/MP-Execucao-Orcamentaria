@@ -1,9 +1,17 @@
 ---
-title: "Empenho: Preparo Série Histórica"
+title: "Empenho: Preparo dos Dados, 2014-8"
 output: github_document
 ---
+
+```{r,echo=F}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  dpi=96
+)
+```
   
-  Inclusão de pacotes
+Inclusão de pacotes
 
 ```{r setup,message=F}
 library(tidyverse)

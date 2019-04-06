@@ -1,13 +1,22 @@
 ---
-title: "Execução Orçamentária: Preparo de Dados"
+title: "Empenho: Preparo dos Dados, 2018"
 output: github_document
 ---
+
+```{r,echo=F}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  dpi=96
+)
+```
 
 Inclusão de pacotes
 
 ```{r setup,message=F}
 library(tidyverse)
 library(fs)
+library(assertthat)
 source("preparo_util.R")
 ```
 
@@ -17,16 +26,20 @@ Lista diretório
 dir_ls("data")
 ```
 
-Unzipa o original
+Pelo menos o csv ou zip devem existir, e se só o ultimo, unzipar
 
-```{r,eval=F}
-unzip("data/despesa2018.zip",exdir='data')
+```{r}
+fname_2018 <- "data/despesa2018.csv"
+fname_2018_zip <- repl_ext(fname_2018,"zip")
+assert_that(file_exists(fname_2018)|
+              file_exists(fname_2018_zip))
+if(!file_exists(fname_2018))
+  unzip(fname_2018_zip,exdir='data')
 ```
 
 Cria variável com nome do arquivo e conta linhas
 
 ```{r,cache=T}
-fname_2018 <- "data/despesa2018.csv"
 linhas <- read_file(fname_2018) %>% str_count('\\n')
 linhas
 ```
@@ -91,7 +104,7 @@ Salva arquivo enxuto em novo csv
 fname_2018_squished <- "data/despesa2018_squished.csv"
 ```
 
-```{r,eval=F}
+```{r,cache=T}
 lines_2018_squished %>% write_lines(fname_2018_squished)
 ```
 

@@ -1,7 +1,15 @@
 ---
-title: "Análise do Valor Empenhado por Órgão, Anos 2014-2018"
+title: "Empenho: Análise dos Dados, 2014-8"
 output: github_document
 ---
+
+```{r,echo=F}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  dpi=96
+)
+```
 
 Inclusão de pacotes
 
@@ -104,7 +112,8 @@ df_hist %>%
   # scale_y_log10() +
   labs(title="Valor Empenhado Anual por Órgão",
        subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
-       y = "Valor Empenhado Total (R$ bilhões)")
+       y = "Valor Empenhado Total (R$ bilhões)") +
+  theme(legend.position = "bottom")
 ```
 
 Distribuição de Valor Empenhado por ano (faceteamento)

@@ -1,4 +1,4 @@
-Empenho: Preparo Série Histórica
+Empenho: Preparo dos Dados, 2014-8
 ================
 
 Inclusão de pacotes
@@ -20,18 +20,16 @@ fnames %>% walk(squish_file)
 fnames_squished <- dir_ls("data",regexp="despesa\\d{4}_squished\\.zip") %>%
   as.character
 fnames_squished
+#> [1] "data/despesa2018_squished.zip"
 ```
-
-    ## [1] "data/despesa2018_squished.zip"
 
 Extrai ano de cada nome de arqiuvo
 
 ``` r
 anos <- map_chr(fnames_squished,str_extract,"\\d{4}")
 anos
+#> [1] "2018"
 ```
-
-    ## [1] "2018"
 
 Lê todos os arquivos (sem descomprimir .zip), adiciona coluna “ano”, e
 concatena num só data frame

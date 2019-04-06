@@ -1,7 +1,15 @@
 ---
-title: "Análise do Valor Empenhado por Órgão, Ano 2018" 
+title: "Empenho: Análise dos Dados, 2018"
 output: github_document
 ---
+
+```{r,echo=F}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  dpi=96
+)
+```
 
 Inclusão de pacotes
 
