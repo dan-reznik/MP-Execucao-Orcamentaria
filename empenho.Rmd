@@ -1,80 +1,85 @@
 ---
 title: "Empenho: Análise dos Dados, 2018"
-output: github_document
+author: Dan S. Reznik
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: default
+    highlight: default
+    code_folding: hide
 ---
 
 ```{r,echo=F}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  dpi=96
+  dpi=96,
+  collapse=T
 )
 ```
 
-Inclusão de pacotes
-
 ```{r setup,message=F}
+# Inclusão de pacotes
 library(tidyverse)
 library(fs)
 ```
 
-Checa tamanho dos arquivos
-
 ```{r}
+# Checa tamanho dos arquivos
 dir_info("data") %>%
   select(path,size,modification_time)
 ```
 
-# Leitura de Dados Higienizados
+## Leitura de Dados Higienizados
 
-Colocar num data frame ("tibble"). Nota: arquivo agora 'e UTF-8
-
-```{r df1,cache=T}
+```{r df1,cache=T,message=F}
+#Colocar num data frame ("tibble"). Nota: arquivo agora 'e UTF-8
 fname_2018_squished_zip <- "data/despesa2018_squished.zip"
 df_orcamento <- read_delim(fname_2018_squished_zip,delim=";",
                            quote="'") # evita erro com "
-glimpse(df_orcamento)
 ```
 
-```{r}
+```{r,include=F}
 problems(df_orcamento)
 ```
 
-Quantas linhas, colunas, ou dimensões?
-
 ```{r}
+# Quantas linhas, colunas, ou dimensões?
 # nrow(df_orcamento)
 # ncol(df_orcamento)
 dim(df_orcamento)
 ```
 
-# Análise do "Empenho"
-
-Calcula sumarização de colunas que parecem conter valores:
-
-```{r,cache=T}
-summary(df_orcamento%>%select(contains("empenh"),
-                              contains("valor")))
+```{r}
+# Seleciona e renomeia colunas a serem utilizadas
+df_orcamento_clean <- df_orcamento %>%
+  transmute(func_cod=`Função`,
+            func=`Nome Função`,
+            empenhado=`Valor Empenhado`,
+            liquidado=`Valor Liquidado`,
+            pago=`Valor Pago`)
+knitr::kable(df_orcamento_clean%>%head(4))%>%
+  kableExtra::kable_styling("striped")
 ```
-
-Quantas linhas não preenchidas (com 'NA')?
-
-```{r,cache=T}
-df_orcamento$`Valor Empenhado` %>% is.na %>% sum
-```
-
-Renomeia colunas a serem utilizadas
 
 ```{r}
-df_orcamento_clean <- df_orcamento %>%
-  rename(func_cod=`Função`,
-         func=`Nome Função`,
-         empenhado=`Valor Empenhado`,
-         liquidado=`Valor Liquidado`,
-         pago=`Valor Pago`)
+# Quantas linhas não preenchidas (com 'NA')?
+df_orcamento_clean$empenhado %>% is.na %>% sum
 ```
 
-Plota histograma dos Valores Empenhados, Liquisdados e Pagos:
+## Análise do "Empenho"
+
+### Sumariza colunas que parecem conter valores:
+
+```{r}
+summary(df_orcamento_clean%>%select(empenhado:pago)) %>%
+  knitr::kable() %>%
+  kableExtra::kable_styling("striped",full_width = T)
+```
+
+### Plota histograma dos Valores Empenhados, Liquisdados e Pagos:
 
 ```{r,cache=T}
 df_orcamento_clean %>%
@@ -94,26 +99,27 @@ df_orcamento_clean %>%
   theme(legend.position = "none")
 ```
 
-# Estudo por Função
-
-Nomes das funções são únicas por código?
+## Estudo por Função
 
 ```{r,cache=T}
+# Nomes das funções são únicas por código?
 df_orcamento_clean %>%
   count(func_cod,func) %>%
   count(func_cod,name="nn") %>%
   count(nn)
 ```
 
-Quantos por Função?
+### Top 5 funções por número de execuções
 
 ```{r,cache=T}
 df_orcamento_clean %>%
-  count(func_cod,func,sort=T)
+  count(func_cod,func,sort=T) %>%
+  head(5) %>%
+  knitr::kable() %>%
+  kableExtra::kable_styling("striped")
 ```
 
-
-Valores por função:
+### Totais dos valores das top 5 funções:
 
 ```{r}
 df_orcamento_clean %>%
@@ -128,10 +134,15 @@ df_orcamento_clean %>%
     ns %>% inner_join(ss,by="func")
     } %>%
   mutate_at(vars(-func),~(./10^3)%>%as.integer) %>%
-  arrange(-n)
+  arrange(-n) %>%
+  rename_all(~str_replace(.,fixed("_"),"\n")) %>%
+  head(5) %>%
+  knitr::kable() %>%
+  kableExtra::kable_styling("striped") #%>%
+  #kableExtra::row_spec(0, angle = -45)
 ```
 
-Empenhos por função: Top 5
+### Valores por função: Top 5
 
 ```{r}
 df_orcamento_clean %>%
@@ -159,8 +170,7 @@ df_orcamento_clean %>%
 ggsave("pics/valores_por_funcao.png")
 ```
 
-
-Distribuição do Empenho por Órgão (boxbplot)
+### Distribuição dos Valores por Função (boxbplot)
 
 ```{r}
 df_orcamento_clean %>%
