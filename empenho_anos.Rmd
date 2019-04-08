@@ -26,15 +26,20 @@ library(ggthemes)
 library(ggforce)
 ```
 
-```{r,cache=T}
-# Lê arquivo de execuções 2014-2018
-df_all <- read_rds("data/df_all.rds")
-nrow(df_all)
-```
 
 ## Lê arquivo fonte e renomeia colunas
 
-```{r}
+```{r,cache=T}
+# Lê arquivo de execuções 2014-2018
+fname_data <- "data/df_all.rds"
+df_all <- read_rds(fname_data)
+tibble(fname=fname_data,
+       lines=nrow(df_all),
+       cols=ncol(df_all)) %>%
+  knitr::kable()
+```
+
+```{r,cache=T}
 # Renomeia/seleciona colunas utilizadas
 df_all_clean <- df_all %>%
   # era: rename(), select() deixa df menor
@@ -79,11 +84,9 @@ df_top_funcs_empenhado %>%
   kableExtra::kable_styling("striped")
 ```
 
-## Compara valores das top 5
+### Compara empenhado x liquidado x pago
 
-### empenhado x liquidado x pago
-
-```{r}
+```{r,cache=T}
 df_all_clean %>%
   mutate(func=func%>%fct_reorder(-empenhado,sum)) %>%
   filter(as.integer(func)<6) %>%
@@ -105,9 +108,9 @@ df_all_clean %>%
         axis.title.y=element_blank())
 ```
 
-## Faceteando valores por ano, top 5
+### Faceteando valores por ano
 
-```{r}
+```{r,cache=T}
 df_all_clean %>%
   mutate(func=func%>%fct_reorder(-empenhado,sum)) %>%
   filter(as.integer(func)<6) %>%
@@ -134,7 +137,7 @@ df_all_clean %>%
 ggsave("pics/valores_por_funcao_2014-8.png",width=11)
 ```
 
-## Empenhado vs Pago das top 5
+### Empenhado vs Pago
 
 ```{r,cache=T,include=F}
 # to do: ggforce: https://www.data-imaginist.com/2019/the-ggforce-awakens-again/
@@ -170,9 +173,11 @@ df_all_clean_gathered <- df_all_clean %>%
   mutate(func_tipo=func%>%str_c("_",tipo)%>%fct_inorder)
 ```
 
-```{r,message=F}
+```{r,cache=T,message=F}
+abbrev_func <- function(s_vec) s_vec %>% str_split(" ") %>% map_chr(~.x%>%str_sub(end=3)%>%str_c(collapse="."))
 anos <- df_all_clean_gathered$ano%>%as.character%>%unique
 df_all_clean_gathered %>%
+  mutate(func=func%>%abbrev_func%>%fct_inorder) %>%
   ggplot(aes(ano,valor/10^9,
              group=func_tipo,
              color=func,linetype=tipo)) +
@@ -187,7 +192,7 @@ df_all_clean_gathered %>%
           axis.title.x=element_blank())
 ```
 
-```{r}
+```{r,eval=F,include=F}
 ggsave("pics/empenhado vs pago.png",width=11)
 ```
 
