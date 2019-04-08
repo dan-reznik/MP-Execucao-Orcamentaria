@@ -4,6 +4,7 @@ author: Daniel Lima (MP-RJ), Dan S. Reznik (PUC-CCE)
 date: Abril, 2019
 output: 
   html_document:
+    mathjax: null
     toc: true
     toc_depth: 3
     toc_float: true
@@ -38,6 +39,9 @@ library(plotly)
 # Lê arquivo de execuções 2014-2018
 fname_data <- "data/df_all.rds"
 df_all <- read_rds(fname_data)
+```
+
+```{r}
 tibble(fname=fname_data,
        lines=nrow(df_all),
        cols=ncol(df_all)) %>%
@@ -45,8 +49,9 @@ tibble(fname=fname_data,
   kableExtra::kable_styling("striped")
 ```
 
-```{r,cache=T}
-# Renomeia/seleciona colunas utilizadas
+### Renomeia/seleciona colunas utilizadas
+
+```{r}
 df_all_clean <- df_all %>%
   # era: rename(), select() deixa df menor
   select(ano,
@@ -55,13 +60,53 @@ df_all_clean <- df_all %>%
          empenhado=`Valor Empenhado`,
          liquidado=`Valor Liquidado`,
          pago=`Valor Pago`)
+```
+
+```{r}
 df_all_clean %>%
   head(5) %>%
-  knitr::kable() %>%
+  knitr::kable(digits=0) %>%
   kableExtra::kable_styling("striped")
 ```
 
-```{r,cache=T}
+### Estatística das colunas numéricas
+
+```{r}
+df_all_clean_summary <- df_all_clean %>%
+  summarize_if(is.numeric,list(o0.n=~length(.),
+                               o1.min=~min(.), # labels "a." preserve order
+                               o2.q1=~quantile(.,.25),
+                               o3.median=~median(.),
+                               o4.mean=~mean(.),
+                               o5.q3=~quantile(.,.75),
+                               o6.max=~max(.))) %>%
+  gather() %>%
+  separate(key,c("col","stat"),sep="_") %>%
+  spread(stat,value) %>%
+  rename_all(~str_remove(.,"(..\\.)"))
+df_all_clean_summary %>%
+  knitr::kable(digits=0) %>%
+  kableExtra::kable_styling("striped")
+```
+
+### Cardinalidade das não numéricas
+
+```{r}
+df_all_clean_summary_card <- df_all_clean %>%
+  rename_all(~str_replace_all(.,fixed("_"),"-")) %>% # to avoid "_" conflict
+  summarize_if(~!is.numeric(.),list(o0.n=~length(.),
+                                    o1.card=~n_distinct(.))) %>%
+  gather() %>%
+  separate(key,c("col","stat"),sep="_") %>%
+  spread(stat,value) %>%
+  rename_all(~str_remove(.,"(..\\.)"))
+
+df_all_clean_summary_card %>%
+  knitr::kable(digits=0) %>%
+  kableExtra::kable_styling("striped")
+```
+
+```{r,cache=T,include=F}
 # Nomes das funções são únicas por código?
 df_all_clean %>%
   count(func_cod,func) %>%
@@ -106,9 +151,9 @@ df_all_clean %>%
   ggplot(aes(func,valor,group=tipo,fill=tipo)) +
   geom_col(position="dodge") +
   coord_flip() +
-  labs(title="Valores Totais por Função",
+  labs(title="Totais por Função",
        subtitle="Top 5 por empenho total 2014-8",
-       y="Valor (R$ bilhões)") +
+       y="R$ bilhões") +
   theme(legend.position = "top",
         legend.title = element_blank(),
         axis.title.y=element_blank())
@@ -130,9 +175,9 @@ df_all_clean %>%
   ggplot(aes(func,valor,group=tipo,fill=tipo)) +
   geom_col(position="dodge") +
   coord_flip() +
-  labs(title="Valores Totais por Função",
+  labs(title="Totais por Função",
        subtitle="Top 5 por empenho total 2014-8",
-       y="Valor (R$ bilhões)") +
+       y="R$ bilhões") +
   theme(legend.position = "top",
         legend.title = element_blank(),
         axis.title.y=element_blank()) +
@@ -191,10 +236,10 @@ p <- df_all_clean_gathered %>%
              color=func,linetype=tipo)) +
   scale_linetype_manual(values=c("dotted","solid"))+
   geom_line(size=I(1.2)) +
-  labs(title="Valor Anual por Função",
+  labs(title="Total Anual por Função",
        subtitle=sprintf("Anos %s-%s, Top 5",
                         min(anos),max(anos)),
-       y = "Valor Total (R$ bilhões)") +
+       y = "R$ bilhões") +
   theme_minimal() +
     theme(legend.position = "bottom",
           legend.title=element_blank(),
