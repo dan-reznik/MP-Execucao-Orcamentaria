@@ -7,8 +7,8 @@ output:
     toc: true
     toc_depth: 3
     toc_float: true
-    theme: default
-    highlight: default
+    theme: united
+    highlight: tango
     code_folding: hide
 ---
 
