@@ -32,7 +32,7 @@ library(ggforce)
 library(plotly)
 ```
 
-## Lê arquivo fonte e renomeia colunas
+## Lê dados fonte (~705k linhas)
 
 ```{r,cache=T}
 # Lê arquivo de execuções 2014-2018
