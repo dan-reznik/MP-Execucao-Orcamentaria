@@ -1,6 +1,7 @@
 ---
 title: "Empenho vs. Pago por Função, 2014-2018"
 author: Daniel Lima (MP-RJ), Dan S. Reznik (PUC-CCE)
+date: Abril, 2019
 output: 
   html_document:
     toc: true
