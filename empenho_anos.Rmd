@@ -41,7 +41,8 @@ df_all <- read_rds(fname_data)
 tibble(fname=fname_data,
        lines=nrow(df_all),
        cols=ncol(df_all)) %>%
-  knitr::kable()
+  knitr::kable() %>%
+  kableExtra::kable_styling("striped")
 ```
 
 ```{r,cache=T}
