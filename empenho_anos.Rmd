@@ -1,6 +1,14 @@
 ---
-title: "Empenho: Análise dos Dados, 2014-8"
-output: github_document
+title: "Empenho: Análise dos Dados, 2018"
+author: Dan S. Reznik
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: default
+    highlight: default
+    code_folding: hide
 ---
 
 ```{r,echo=F}
@@ -11,22 +19,21 @@ knitr::opts_chunk$set(
 )
 ```
 
-Inclusão de pacotes
-
 ```{r setup,message=F}
+# Inclusão de pacotes
 library(tidyverse)
 library(ggthemes)
 library(ggforce)
 ```
 
-Lê do arquivo ".rds" preparado em `preparo_anos.Rmd`
+## Lê arquivo de execuções 2014-2018
 
 ```{r,cache=T}
 df_all <- read_rds("data/df_all.rds")
 nrow(df_all)
 ```
 
-Renomeia e seleciona colunas a serem utilizadas
+## Renomeia/seleciona colunas utilizadas
 
 ```{r}
 df_all_clean <- df_all %>%
@@ -39,50 +46,60 @@ df_all_clean <- df_all %>%
          pago=`Valor Pago`)
 ```
 
-
-Nomes das funções são únicas por código?
-
 ```{r,cache=T}
+# Nomes das funções são únicas por código?
 df_all_clean %>%
   count(func_cod,func) %>%
   count(func_cod,name="nn") %>%
   count(nn)
 ```
 
-Função com maior valor empenhado total (top 5)
+## Top funções por valor empenhado
 
 ```{r,cache=T}
-anos <- unique(df_all_clean$ano%>%as.character)%>%as.integer
-
 df_top_funcs_empenhado <- df_all_clean %>%
   group_by(func_cod,func) %>%
   summarize(n=n(),
-            total=sum(empenhado)) %>%
-  arrange(desc(total)) %>%
-  head(5) %>%
-  select(func_cod,func,everything()) %>%
+            empenhado_b=sum(empenhado)/10^9,
+            pago_b=sum(pago)/10^9,
+            ) %>%
   ungroup() %>%
-  mutate_at(vars(func_cod,func),fct_drop) %>% # so unused levels are dropped
-  mutate(media_anual=total/length(anos)) %>%
-  mutate_at(vars(total,media_anual),~(./10^9)%>%as.integer) %>%
-  rename_at(vars(total,media_anual),~str_c(.,"_b")) # billions
-df_top_funcs_empenhado
+  arrange(desc(empenhado_b)) %>%
+  head(5) %>%
+  mutate(rank=row_number(),
+         func=func%>%fct_drop%>%fct_inorder,
+         func_cod=func_cod%>%fct_drop%>%fct_inorder) %>%
+  select(rank,everything())
+df_top_funcs_empenhado %>%
+  knitr::kable(digits=0) %>%
+  kableExtra::kable_styling("striped")
 ```
 
-Valores médios anuais
+## Compara valores totais
 
-```{r,cache=T}
-df_top_funcs_empenhado %>%
-  mutate(func=func%>%fct_inorder()%>%fct_rev) %>%
-  ggplot(aes(func,media_anual_b)) +
-  geom_col(aes(fill=func)) +
+```{r}
+df_all_clean %>%
+  mutate(func=func%>%fct_reorder(-empenhado,sum)) %>%
+  filter(as.integer(func)<6) %>%
+  mutate(func=func%>%fct_drop%>%fct_rev) %>% # for coord_flip
+  group_by(func) %>%
+  # milhoes
+  summarize_at(vars(empenhado,liquidado,pago),
+               list(~(sum(.)/10^9))) %>%
+  gather("tipo","valor",-func) %>%
+  mutate(tipo=factor(tipo,levels=c("pago","liquidado","empenhado"))) %>%
+  ggplot(aes(func,valor,group=tipo,fill=tipo)) +
+  geom_col(position="dodge") +
   coord_flip() +
-  labs(title="Média de Valores Empenhados Anuais por Função",
-       subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
-       y="Valor Empenhado Anual Médio (R$ bilhões)") +
-  theme(legend.position = "none",
+  labs(title="Valores Totais por Função",
+       subtitle="Top 5 por empenho total 2014-8",
+       y="Valor (R$ bilhões)") +
+  theme(legend.position = "top",
+        legend.title = element_blank(),
         axis.title.y=element_blank())
 ```
+
+## Valores totais por ano (faceteamento)
 
 ```{r}
 df_all_clean %>%
@@ -93,9 +110,9 @@ df_all_clean %>%
   # milhoes
   summarize_at(vars(empenhado,liquidado,pago),
                list(~(sum(.)/10^9))) %>%
-  gather("key","value",-func,-ano) %>%
-  mutate(key=factor(key,levels=c("pago","liquidado","empenhado"))) %>%
-  ggplot(aes(func,value,group=key,fill=key)) +
+  gather("tipo","valor",-func,-ano) %>%
+  mutate(tipo=factor(tipo,levels=c("pago","liquidado","empenhado"))) %>%
+  ggplot(aes(func,valor,group=tipo,fill=tipo)) +
   geom_col(position="dodge") +
   coord_flip() +
   labs(title="Valores Totais por Função",
@@ -111,49 +128,17 @@ df_all_clean %>%
 ggsave("pics/valores_por_funcao_2014-8.png",width=11)
 ```
 
+## Empenhado vs Pago das top funções
 
-Empenhado vs Pago das top funções:
+```{r,cache=T,include=F}
+# to do: ggforce: https://www.data-imaginist.com/2019/the-ggforce-awakens-again/
 
-```{r,cache=T,message=F}
-df_valores <- df_all_clean %>%
-  # to avoid warning on factors
-  {suppressWarnings(semi_join(.,df_top_funcs_empenhado,by="func_cod"))}%>%
-  group_by(ano,func) %>%
-  summarize_at(vars(empenhado,liquidado,pago),list(sum=~sum(.)/10^9%>%round(1))) %>%
-  arrange(desc(empenhado_sum)) %>%
-  ungroup() %>% # para q proxima linha rode corretamente
-  mutate(func=func%>%fct_drop%>%fct_inorder) %>%
-  gather("tipo","valor",ends_with("_sum")) %>%
-  mutate_at(vars(tipo),~str_sub(.,end=-5)) %>% # remove "_sum" suffix
-  filter(tipo!="liquidado")
+#df_valores_ggf <- df_all_clean %>%
+#  gather("key","value",-func,-ano) %>%
+#  filter(key=="empenhado",ano==2017) %>%
+#  group_by(ano,func,key)%>%
+#  summarize(valor=last(value))
 
-df_valores %>%
-  ggplot(aes(ano,valor,group=func,color=func)) +
-  geom_line(size=I(1.2)) +
-  # scale_y_log10() +
-  labs(title="Valor Anual por Função",
-       subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
-       y = "Valor Total (R$ bilhões)") +
-  theme(legend.position = "top",
-        legend.title=element_blank()) +
-  facet_wrap(~tipo)
-```
-
-Empenhado vs Pago das top funções:
-
-```{r,cache=T,message=F}
-df_valores_ggf <- df_valores%>%
-  filter(tipo=="empenhado",ano==2017) %>%
-  group_by(ano,func,tipo)%>%
-  summarize(valor=last(valor))
-
-df_valores %>%
-  mutate(func_tipo=func%>%str_c("_",tipo)) %>%
-  ggplot(aes(ano,valor,
-             group=func_tipo,
-             color=func,linetype=tipo)) +
-  geom_line(size=I(1.2)) +
-  # to do: ggforce
   # geom_mark_ellipse(aes(fill = Species, label = Species)) +
   #geom_mark_circle(aes(ano,valor,
   #                     label=func,
@@ -161,37 +146,43 @@ df_valores %>%
   #                 data=df_valores_ggf,
   #                 expand=.002,
   #                 label.fontsize=8,
-  #                inherit.aes=F)+
-  #scale_y_log10() +
+```
+
+```{r,cache=T}
+top_levs <- df_top_funcs_empenhado$func%>%levels
+df_all_clean_gathered <- df_all_clean %>%
+  { suppressWarnings(inner_join(.,df_top_funcs_empenhado%>%
+                                  select(rank,func_cod),
+                               by="func_cod")) } %>%
+  arrange(rank) %>%
+  mutate(func=func%>%fct_drop%>%fct_inorder) %>%
+  group_by(ano,func) %>%
+  summarise(empenhado=sum(empenhado),
+            pago=sum(pago)) %>%
+  ungroup() %>%
+  gather("tipo","valor",empenhado,pago)  %>%
+  mutate(func_tipo=func%>%str_c("_",tipo)%>%fct_inorder)
+```
+
+```{r,message=F}
+anos <- df_all_clean_gathered$ano%>%as.character%>%unique
+df_all_clean_gathered %>%
+  ggplot(aes(ano,valor/10^9,
+             group=func_tipo,
+             color=func,linetype=tipo)) +
+  geom_line(size=I(1.2)) +
   labs(title="Valor Anual por Função",
-       subtitle=sprintf("Anos %s-%s, Top 5", min(anos),max(anos)),
+       subtitle=sprintf("Anos %s-%s, Top 5",
+                        min(anos),max(anos)),
        y = "Valor Total (R$ bilhões)") +
   theme_minimal() +
     theme(legend.position = "bottom",
-          legend.title=element_blank())
+          legend.title=element_blank(),
+          axis.title.x=element_blank())
 ```
 
 ```{r}
 ggsave("pics/empenhado vs pago.png",width=11)
 ```
 
-### TO DO: use ggforce::geom_mark
-https://www.data-imaginist.com/2019/the-ggforce-awakens-again/
-
-Distribuição de Valor Empenhado por ano (faceteamento)
-
-```{r,cache=T,message=F}
-df_all_clean %>%
-  semi_join(df_top_funcs_empenhado,by="func_cod") %>%
-  mutate(func=func%>%fct_reorder(empenhado,sum)) %>%
-  ggplot(aes(func,empenhado+1)) +
-  geom_boxplot(aes(fill=func),outlier.shape=NA) +
-  scale_y_log10(breaks=10^c(0,3,6,9),labels=c("1","1k","1M","1B")) + #breaks=10^(1:5),labels=10^(1:5)%>%as.integer) +
-  coord_flip() + # ylim=c(10,.5*10^5)) +
-  facet_wrap(~ano,ncol=2) +
-  labs(title="Distribuição do Valor Empenhado",
-       y = "Valor Empenhado Anual (R$)") +
-  theme(legend.position = "none",
-        axis.title.y=element_blank())
-```
 
