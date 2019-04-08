@@ -73,6 +73,7 @@ df_all_clean %>%
 
 ```{r}
 df_all_clean_summary <- df_all_clean %>%
+  rename_all(~str_replace_all(.,fixed("_"),"-")) %>% # to avoid "_" conflict
   summarize_if(is.numeric,list(o0.n=~length(.),
                                o1.min=~min(.), # labels "a." preserve order
                                o2.q1=~quantile(.,.25),
