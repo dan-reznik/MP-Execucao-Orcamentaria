@@ -90,7 +90,7 @@ df_top_funcs_empenhado %>%
 
 ### Compara empenhado x liquidado x pago
 
-```{r,cache=T}
+```{r,cache=T,out.width='100%'}
 df_all_clean %>%
   mutate(func=func%>%fct_reorder(-empenhado,sum)) %>%
   filter(as.integer(func)<6) %>%
@@ -114,7 +114,7 @@ df_all_clean %>%
 
 ### Faceteando valores por ano
 
-```{r,cache=T}
+```{r,cache=T,out.width='100%'}
 df_all_clean %>%
   mutate(func=func%>%fct_reorder(-empenhado,sum)) %>%
   filter(as.integer(func)<6) %>%
