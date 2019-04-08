@@ -26,16 +26,16 @@ library(ggthemes)
 library(ggforce)
 ```
 
-## Lê arquivo de execuções 2014-2018
-
 ```{r,cache=T}
+# Lê arquivo de execuções 2014-2018
 df_all <- read_rds("data/df_all.rds")
 nrow(df_all)
 ```
 
-## Renomeia/seleciona colunas utilizadas
+## Lê arquivo fonte e renomeia colunas
 
 ```{r}
+# Renomeia/seleciona colunas utilizadas
 df_all_clean <- df_all %>%
   # era: rename(), select() deixa df menor
   select(ano,
@@ -44,6 +44,10 @@ df_all_clean <- df_all %>%
          empenhado=`Valor Empenhado`,
          liquidado=`Valor Liquidado`,
          pago=`Valor Pago`)
+df_all_clean %>%
+  head(5) %>%
+  knitr::kable() %>%
+  kableExtra::kable_styling("striped")
 ```
 
 ```{r,cache=T}
@@ -54,7 +58,7 @@ df_all_clean %>%
   count(nn)
 ```
 
-## Top funções por valor empenhado
+## Top 5 funções por valor empenhado
 
 ```{r,cache=T}
 df_top_funcs_empenhado <- df_all_clean %>%
@@ -75,7 +79,9 @@ df_top_funcs_empenhado %>%
   kableExtra::kable_styling("striped")
 ```
 
-## Compara valores totais
+## Compara valores das top 5
+
+### empenhado x liquidado x pago
 
 ```{r}
 df_all_clean %>%
@@ -99,7 +105,7 @@ df_all_clean %>%
         axis.title.y=element_blank())
 ```
 
-## Valores totais por ano (faceteamento)
+## Faceteando valores por ano, top 5
 
 ```{r}
 df_all_clean %>%
@@ -128,7 +134,7 @@ df_all_clean %>%
 ggsave("pics/valores_por_funcao_2014-8.png",width=11)
 ```
 
-## Empenhado vs Pago das top funções
+## Empenhado vs Pago das top 5
 
 ```{r,cache=T,include=F}
 # to do: ggforce: https://www.data-imaginist.com/2019/the-ggforce-awakens-again/
