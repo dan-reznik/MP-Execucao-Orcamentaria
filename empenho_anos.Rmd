@@ -202,7 +202,6 @@ ggplotly(p,tooltip=c("func","valor","tipo")) %>%
   # hide_legend() %>%
   config(displayModeBar = F)%>%
   layout(legend = list(orientation="v",font = list(size = 8)))
-  # layout(legend = list(orientation = "h", x = 0.4, y = -0.2))
 ```
 
 ```{r,eval=F,include=F}
