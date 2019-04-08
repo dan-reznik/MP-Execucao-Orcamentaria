@@ -24,6 +24,7 @@ knitr::opts_chunk$set(
 library(tidyverse)
 library(ggthemes)
 library(ggforce)
+library(plotly)
 ```
 
 
@@ -191,7 +192,6 @@ p <- df_all_clean_gathered %>%
     theme(legend.position = "bottom",
           legend.title=element_blank(),
           axis.title.x=element_blank())
-library(plotly)
 ggplotly(p,tooltip=c("func","valor","tipo")) %>%
   hide_legend()
   # layout(legend = list(orientation = "h", x = 0.4, y = -0.2))
