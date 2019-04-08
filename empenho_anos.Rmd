@@ -169,16 +169,17 @@ df_all_clean_gathered <- df_all_clean %>%
   summarise(empenhado=sum(empenhado),
             pago=sum(pago)) %>%
   ungroup() %>%
-  gather("tipo","valor",empenhado,pago)  %>%
-  mutate(func_tipo=func%>%str_c("_",tipo)%>%fct_inorder)
+  gather("tipo","valor",empenhado,pago)
 ```
 
 ```{r,cache=T,message=F}
 abbrev_func <- function(s_vec) s_vec %>% str_split(" ") %>% map_chr(~.x%>%str_sub(end=3)%>%str_c(collapse="."))
 anos <- df_all_clean_gathered$ano%>%as.character%>%unique
-df_all_clean_gathered %>%
-  mutate(func=func%>%abbrev_func%>%fct_inorder) %>%
-  ggplot(aes(ano,valor/10^9,
+p <- df_all_clean_gathered %>%
+  mutate(func=func%>%abbrev_func%>%fct_inorder,
+         valor=valor/10^9%>%round(1),
+         func_tipo=func%>%str_c("_",tipo)%>%fct_inorder) %>%
+  ggplot(aes(ano,valor,
              group=func_tipo,
              color=func,linetype=tipo)) +
   geom_line(size=I(1.2)) +
@@ -190,6 +191,10 @@ df_all_clean_gathered %>%
     theme(legend.position = "bottom",
           legend.title=element_blank(),
           axis.title.x=element_blank())
+library(plotly)
+ggplotly(p,tooltip=c("func","valor","tipo")) %>%
+  hide_legend()
+  # layout(legend = list(orientation = "h", x = 0.4, y = -0.2))
 ```
 
 ```{r,eval=F,include=F}
