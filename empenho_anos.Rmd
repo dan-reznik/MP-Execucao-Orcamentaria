@@ -19,6 +19,10 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r,out.width='33%'}
+knitr::include_graphics("pics/puc_mprj_inova_small.png")
+```
+
 ```{r setup,message=F}
 # Inclusão de pacotes
 library(tidyverse)
@@ -26,7 +30,6 @@ library(ggthemes)
 library(ggforce)
 library(plotly)
 ```
-
 
 ## Lê arquivo fonte e renomeia colunas
 
@@ -138,7 +141,7 @@ df_all_clean %>%
 ggsave("pics/valores_por_funcao_2014-8.png",width=11)
 ```
 
-### Empenhado vs Pago
+### Gráfico Interativo: Empenhado vs Pago
 
 ```{r,cache=T,include=F}
 # to do: ggforce: https://www.data-imaginist.com/2019/the-ggforce-awakens-again/
@@ -178,11 +181,12 @@ abbrev_func <- function(s_vec) s_vec %>% str_split(" ") %>% map_chr(~.x%>%str_su
 anos <- df_all_clean_gathered$ano%>%as.character%>%unique
 p <- df_all_clean_gathered %>%
   mutate(func=func%>%abbrev_func%>%fct_inorder,
-         valor=valor/10^9%>%round(1),
+         valor=(valor/10^9)%>%round(1),
          func_tipo=func%>%str_c("_",tipo)%>%fct_inorder) %>%
   ggplot(aes(ano,valor,
              group=func_tipo,
              color=func,linetype=tipo)) +
+  scale_linetype_manual(values=c("dotted","solid"))+
   geom_line(size=I(1.2)) +
   labs(title="Valor Anual por Função",
        subtitle=sprintf("Anos %s-%s, Top 5",
