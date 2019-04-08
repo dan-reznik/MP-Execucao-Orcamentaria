@@ -1,6 +1,6 @@
 ---
-title: "Empenho: Análise dos Dados, 2018"
-author: Dan S. Reznik
+title: "Empenho vs. Pago por Função, 2014-2018"
+author: Daniel Lima (MP-RJ), Dan S. Reznik (PUC-CCE)
 output: 
   html_document:
     toc: true
@@ -176,11 +176,12 @@ df_all_clean_gathered <- df_all_clean %>%
   gather("tipo","valor",empenhado,pago)
 ```
 
-```{r,cache=T,message=F}
+```{r,cache=T,message=F,out.width='100%'}
 abbrev_func <- function(s_vec) s_vec %>% str_split(" ") %>% map_chr(~.x%>%str_sub(end=3)%>%str_c(collapse="."))
 anos <- df_all_clean_gathered$ano%>%as.character%>%unique
 p <- df_all_clean_gathered %>%
-  mutate(func=func%>%abbrev_func%>%fct_inorder,
+  mutate(tipo=tipo%>%fct_recode(emp="empenhado",pag="pago"),
+         func=func%>%abbrev_func%>%fct_inorder,
          valor=(valor/10^9)%>%round(1),
          func_tipo=func%>%str_c("_",tipo)%>%fct_inorder) %>%
   ggplot(aes(ano,valor,
@@ -197,7 +198,9 @@ p <- df_all_clean_gathered %>%
           legend.title=element_blank(),
           axis.title.x=element_blank())
 ggplotly(p,tooltip=c("func","valor","tipo")) %>%
-  hide_legend()
+  # hide_legend() %>%
+  config(displayModeBar = F)%>%
+  layout(legend = list(orientation="v",font = list(size = 8)))
   # layout(legend = list(orientation = "h", x = 0.4, y = -0.2))
 ```
 
