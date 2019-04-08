@@ -89,7 +89,7 @@ df_top_funcs_empenhado %>%
   kableExtra::kable_styling("striped")
 ```
 
-### Compara empenhado x liquidado x pago
+### Compara: empenhado x liquidado x pago
 
 ```{r,cache=T,out.width='100%'}
 df_all_clean %>%
@@ -113,7 +113,7 @@ df_all_clean %>%
         axis.title.y=element_blank())
 ```
 
-### Faceteando valores por ano
+### Facetas: valores por ano
 
 ```{r,cache=T,out.width='100%'}
 df_all_clean %>%
@@ -142,7 +142,7 @@ df_all_clean %>%
 ggsave("pics/valores_por_funcao_2014-8.png",width=11)
 ```
 
-### Gráfico Interativo: Empenhado vs Pago
+### Interativo: Empenhado vs Pago
 
 ```{r,cache=T,include=F}
 # to do: ggforce: https://www.data-imaginist.com/2019/the-ggforce-awakens-again/
