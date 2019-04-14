@@ -20,4 +20,4 @@ Projeto: Execução Orçamentária
     -   [web](https://dan-reznik.github.io/MP-Execucao-Orcamentaria-Mensal/)
     -   [repositorio](https://github.com/dan-reznik/MP-Execucao-Orcamentaria-Mensal)
     -   [preparo](https://dan-reznik.github.io/MP-Execucao-Orcamentaria-Mensal/preparo_mensal.html)
-    -   análise: to do
+    -   [análise](https://dan-reznik.github.io/MP-Execucao-Orcamentaria-Mensal/analise_mensal.html)
