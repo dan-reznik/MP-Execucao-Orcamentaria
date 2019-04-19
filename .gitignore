@@ -4,4 +4,4 @@
 .Ruserdata
 *.csv
 despesa.zip
-*_cache
+*_cache/
